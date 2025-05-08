@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-general-sans);
+  --font-general-sans: "General Sans", sans-serif;
+}

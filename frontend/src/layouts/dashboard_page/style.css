@@ -1,0 +1,8 @@
+.ant-menu-item-selected {
+  background-color: #272735 !important; /* Change background color */
+  color: #fff !important; /* Change text color */
+}
+
+.ant-menu-item-selected .ant-menu-item-icon {
+  color: #fff !important; /* Change icon color */
+}
