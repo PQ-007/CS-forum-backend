@@ -1,18 +1,26 @@
-import React from "react";
-import { Form, Input, Button, Typography, Divider } from "antd";
+import { Form, Input, Button, Typography, Divider, message } from "antd";
 import { UserOutlined, LockOutlined, MailOutlined } from "@ant-design/icons";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import authService from "../../../service/authService";
 
 const { Title, Text } = Typography;
 
 const RegisterPage = () => {
-  const onFinish = (values) => {
-    console.log("Received values of form: ", values);
+  const navigate = useNavigate();
+
+  const onFinish = async (values: any) => {
+    const { email, password, name } = values;
+    try {
+      await authService.register(email, password, name);
+      message.success("Амжилттай бүртгэгдлээ!");
+      navigate("/login");
+    } catch (error: any) {
+      message.error(error?.message || "Бүртгэх явцад алдаа гарлаа.");
+    }
   };
 
   return (
-    <div className="w-full max-w-sm">
-      {/* Logo or icon could go here */}
+    <div className="w-full max-w-sm mx-auto">
       <div className="text-center mb-6">
         <Title level={2} className="!text-[#272835] !m-0">
           Бүртгүүлэх

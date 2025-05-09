@@ -15,9 +15,11 @@
     "ahooks": "^3.8.4",
     "antd": "^5.24.9",
     "axios": "^1.9.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "firebase": "^11.7.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.0",
+    "react-toastify": "^11.0.5",
     "tailwindcss": "^4.1.5"
   },
   "devDependencies": {

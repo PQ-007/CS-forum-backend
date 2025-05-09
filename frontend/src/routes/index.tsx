@@ -39,6 +39,16 @@ const MainRoutes: React.FC = () => {
           }
         />
       </Route>
+      {/* <Route
+          path="/profile"
+          element={
+            <DashboardContent
+              mainContent={<StudentCoursePage section="profile" />}
+              sidebarContent={<StudentCoursePage section="sidebar" />}
+            />
+          }
+        />
+      </Route> */}
 
       {/* Catch-all Route */}
       <Route path="*" element={<Navigate to="/login" replace />} />

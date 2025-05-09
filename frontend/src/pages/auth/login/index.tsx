@@ -1,18 +1,36 @@
-import React from "react";
-import { Form, Input, Button, Checkbox, Typography, Divider } from "antd";
+import {
+  Form,
+  Input,
+  Button,
+  Checkbox,
+  Typography,
+  Divider,
+  message,
+} from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import GoogleLoginButton from "../../../components/GoogleLoginButton";
+import authService from "../../../service/authService";
 
 const { Title, Text } = Typography;
 
 const LoginPage = () => {
-  const onFinish = (values) => {
-    console.log("Received values of form: ", values);
+  const navigate = useNavigate();
+
+  const onFinish = async (values: any) => {
+    const { email, password } = values;
+    try {
+      // Firebase login logic
+      await authService.login(email, password);
+      message.success("Амжилттэй нэвтэрлээ");
+      navigate("/dashboard");
+    } catch (error: any) {
+      message.error(error?.message || "Нэвтрэх явцад алдаа гарлаа.");
+    }
   };
 
   return (
-    <div className="w-full max-w-sm">
-      {/* Logo or icon could go here */}
+    <div className="w-full max-w-sm mx-auto">
       <div className="text-center mb-6">
         <Title level={2} className="!text-[#272835] !m-0">
           Тавтай морил
@@ -76,6 +94,10 @@ const LoginPage = () => {
           </Button>
         </Form.Item>
       </Form>
+
+      <div className="flex items-center justify-center my-4">
+        <GoogleLoginButton />
+      </div>
 
       <Divider plain>
         <Text className="text-gray-500">Эсвэл</Text>
