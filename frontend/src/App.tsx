@@ -1,13 +1,13 @@
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import MainRoutes from "./routes";
+import { BrowserRouter } from "react-router-dom";
+import RoleBasedRoutes from "./routes/RoleBasedRoutes";
 
 const App = () => {
   return (
-    <>
-      <MainRoutes />
-      <ToastContainer aria-label="Notification" />
-    </>
+    <BrowserRouter>
+      <RoleBasedRoutes />
+      {/* For role-based routing, replace MainRoutes with RoleBasedRoutes */}
+      {/* <RoleBasedRoutes /> */}
+    </BrowserRouter>
   );
 };
 

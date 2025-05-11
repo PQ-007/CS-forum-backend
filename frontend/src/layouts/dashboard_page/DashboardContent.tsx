@@ -3,7 +3,7 @@ import DashboardHeader from "../../components/DashboardHeader";
 
 interface DashboardContentProps {
   mainContent: React.ReactNode;
-  sidebarContent: React.ReactNode;
+  sidebarContent?: React.ReactNode; // Make sidebarContent optional
 }
 
 const DashboardContent: React.FC<DashboardContentProps> = ({
@@ -16,14 +16,20 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
 
       <div className="flex flex-1 overflow-hidden">
         {/* Middle Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 relative">
-          <div className="pr-[300px]">{mainContent}</div>
+        <div
+          className={`${
+            sidebarContent ? "flex-1 pr-[300px]" : "w-full"
+          } overflow-y-auto p-4 relative`}
+        >
+          {mainContent}
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-[350px] p-4 bg-gray-100 border-l border-gray-200 absolute right-2 top-15 bottom-2 overflow-y-auto hide-scrollbar">
-          {sidebarContent}
-        </div>
+        {sidebarContent && (
+          <div className="w-[350px] p-4 bg-gray-100 border-l border-gray-200 absolute right-2 top-15 bottom-2 overflow-y-auto hide-scrollbar">
+            {sidebarContent}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -5,14 +5,16 @@ import { doc, getDoc } from "firebase/firestore";
 
 interface AuthContextType {
   user: User | null;
-  userData: any; 
+  userData: any;
   loading: boolean;
+  authorized: boolean; // New property
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   userData: null,
   loading: true,
+  authorized: false, // Default value
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -24,6 +26,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Compute the authorized state
+  const authorized = !!user && !!userData; // Example: user is authorized if logged in and userData exists
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
@@ -31,9 +36,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
           const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
           if (userDoc.exists()) {
-            setUserData(userDoc.data()); 
+            setUserData(userDoc.data());
           } else {
-            setUserData(null); 
+            setUserData(null);
           }
         } catch (err) {
           console.error("Failed to fetch user data from Firestore:", err);
@@ -49,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading }}>
+    <AuthContext.Provider value={{ user, userData, loading, authorized }}>
       {children}
     </AuthContext.Provider>
   );
