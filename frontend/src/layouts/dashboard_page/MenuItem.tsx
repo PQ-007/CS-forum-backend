@@ -1,10 +1,10 @@
 import {
   BookOutlined,
   HomeOutlined,
-  UserOutlined,
-  SettingOutlined,
   TeamOutlined,
   DashboardOutlined,
+  FormOutlined,
+  NotificationOutlined,
 } from "@ant-design/icons";
 
 // Student Menu Items
@@ -20,9 +20,14 @@ export const StudentMenuItems = [
     path: "/dashboard/student/course",
   },
   {
-    icon: <UserOutlined />,
-    label: "Профайл",
-    path: "/dashboard/student/profile",
+    icon: <FormOutlined />,
+    label: "Нийтлэл",
+    path: "/dashboard/student/posts",
+  },
+  {
+    icon: <NotificationOutlined />,
+    label: "Мэдэгдэл",
+    path: "/dashboard/student/announcements",
   },
 ];
 
@@ -43,11 +48,6 @@ export const TeacherMenuItems = [
     label: "Сурагчид",
     path: "/dashboard/teacher/students",
   },
-  {
-    icon: <UserOutlined />,
-    label: "Профайл",
-    path: "/dashboard/teacher/profile",
-  },
 ];
 
 // Admin Menu Items
@@ -66,10 +66,5 @@ export const AdminMenuItems = [
     icon: <TeamOutlined />,
     label: "Хэрэглэгчид",
     path: "/dashboard/admin/users",
-  },
-  {
-    icon: <SettingOutlined />,
-    label: "Тохиргоо",
-    path: "/dashboard/admin/settings",
   },
 ];
