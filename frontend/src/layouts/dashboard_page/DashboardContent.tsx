@@ -11,22 +11,23 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   sidebarContent,
 }) => {
   return (
-    <div className="bg-white rounded-lg overflow-hidden w-full h-full flex flex-col">
+    <div className="bg-white rounded-lg w-full h-full flex flex-col">
       <DashboardHeader />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Middle Content Area */}
+      <div className="flex flex-1 min-h-0">
+        {" "}
+        {/* min-h-0 ensures proper flexbox behavior */}
+        {/* Main */}
         <div
           className={`${
-            sidebarContent ? "flex-1 pr-[300px]" : "w-full"
-          } overflow-y-auto p-4 relative`}
+            sidebarContent ? "w-[calc(100%-350px)]" : "w-full"
+          } p-4 overflow-y-auto no-scrollbar`}
         >
           {mainContent}
         </div>
-
-        {/* Right Sidebar */}
+        {/* Sidebar */}
         {sidebarContent && (
-          <div className="w-[350px] p-4 bg-gray-100 border-l border-gray-200 absolute right-2 top-15 bottom-2 overflow-y-auto hide-scrollbar">
+          <div className="w-[350px] overflow-y-auto no-scrollbar bg-gray-100 border-l border-gray-200 p-4">
             {sidebarContent}
           </div>
         )}
