@@ -5,7 +5,7 @@ import {
   signOut,
 } from "firebase/auth";
 import { auth, provider, db } from "../firebase";
-import { doc, setDoc } from "firebase/firestore"; // Import Firestore functions
+import { doc, setDoc } from "firebase/firestore"; 
 
 class AuthenticationService {
   private static instance: AuthenticationService;
@@ -45,7 +45,7 @@ class AuthenticationService {
     }
   }
 
-  // Register with email & password
+
   public async register(
     email: string,
     password: string,

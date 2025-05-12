@@ -2,6 +2,9 @@ import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
+import StudentProfilePage from "../pages/student/profile";
+import StudentSettingsPage from "../pages/student/settings";
+import { Profile } from "../pages/student/profile/type";
 
 // Layouts
 const AuthLayout = lazy(() => import("../layouts/login_page"));
@@ -19,6 +22,7 @@ const DashboardContent = lazy(
 // Student Pages
 const StudentHomePage = lazy(() => import("../pages/student/home"));
 const StudentCoursePage = lazy(() => import("../pages/student/course"));
+
 
 // Teacher Pages - Uncomment when implementing
 // const TeacherHomePage = lazy(() => import("../pages/teacher/home"));
@@ -112,10 +116,14 @@ const RoleBasedRoutes: React.FC = () => {
             }
           />
           <Route
-            path="profile"
+            path={`profile/:uid`}
+            element={<DashboardContent mainContent={<StudentProfilePage />} />}
+          />
+          <Route
+            path={`settings/:uid`}
             element={
               <DashboardContent
-                mainContent={<div>Student Profile Content</div>}
+                mainContent={<StudentSettingsPage />}
               />
             }
           />
