@@ -2,7 +2,6 @@ import React from "react";
 import {
   BellOutlined,
   MailOutlined,
-  DownOutlined,
   LogoutOutlined,
   SettingOutlined,
   UserOutlined,
@@ -72,7 +71,7 @@ const DashboardHeader: React.FC = () => {
           />
           <div className="flex flex-col items-start">
             <div className="text-[#353849] text-sm font-medium flex items-center gap-1">
-              {userName} <DownOutlined className="text-xs" />
+              {userName}
             </div>
             <div className="text-[#808897] text-xs truncate max-w-[150px]">
               {userEmail}

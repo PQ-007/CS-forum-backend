@@ -1,0 +1,306 @@
+import {
+  DeleteOutlined,
+  DownOutlined,
+  EditOutlined,
+  FileOutlined,
+  PlusOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
+import { Button, Modal } from "antd";
+import React, { useState } from "react";
+import FormModal from "../Modal";
+import { ContentSection, CourseData, FileItem } from "../types";
+
+interface CourseContentProps {
+  sections: ContentSection[];
+  className?: string;
+  onAddFile?: (sectionTitle: string) => void;
+  onAddSection?: () => void;
+  onEditCourse?: (course: CourseData) => void;
+  onEditSection?: (sectionTitle: string, newTitle: string) => void;
+  onEditFile?: (
+    sectionTitle: string,
+    fileIndex: number,
+    newName: string
+  ) => void;
+  onDeleteFile?: (sectionTitle: string, fileIndex: number) => void;
+  onDeleteSection?: (sectionTitle: string) => void;
+  isEditable?: boolean;
+}
+
+interface EditingState {
+  type: "section" | "file";
+  sectionTitle?: string;
+  fileIndex?: number;
+  initialValue?: string;
+}
+
+const CourseContent: React.FC<CourseContentProps> = ({
+  sections,
+  className = "",
+  onAddFile,
+  onAddSection,
+  onEditSection,
+  onEditFile,
+  onDeleteFile,
+  onDeleteSection,
+  isEditable = false,
+}) => {
+  console.log("CourseContent sections:", sections); // Debug log
+  console.log("CourseContent isEditable:", isEditable); // Debug log
+
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
+  const [editing, setEditing] = useState<EditingState | null>(null);
+
+  const handleFileClick = (file: FileItem) => {
+    setPreviewFile(file);
+  };
+
+  const handleModalSubmit = (values: any) => {
+    if (editing?.type === "section" && editing.sectionTitle) {
+      onEditSection?.(editing.sectionTitle, values.title);
+    } else if (
+      editing?.type === "file" &&
+      editing.sectionTitle !== undefined &&
+      editing.fileIndex !== undefined
+    ) {
+      onEditFile?.(editing.sectionTitle, editing.fileIndex, values.name);
+    }
+    setEditing(null);
+  };
+
+  const getModalFields = () => {
+    if (editing?.type === "section") {
+      return [
+        {
+          name: "title",
+          label: "Сэдвийн нэр",
+          type: "text" as const,
+          rules: [{ required: true, message: "Сэдвийн нэр оруулна уу!" }],
+        },
+      ];
+    }
+    return [
+      {
+        name: "name",
+        label: "Файлын нэр",
+        type: "text" as const,
+        rules: [{ required: true, message: "Файлын нэр оруулна уу!" }],
+      },
+    ];
+  };
+
+  const renderFilePreview = (file: FileItem) => {
+    if (file.type?.startsWith("image/")) {
+      return (
+        <img src={file.url} alt={file.name} style={{ maxWidth: "100%" }} />
+      );
+    }
+
+    if (file.type === "application/pdf") {
+      return <iframe src={file.url} width="100%" height="500px" />;
+    }
+
+    return (
+      <div className="text-center p-4">
+        <FileOutlined style={{ fontSize: 48 }} />
+        <p className="mt-2">{file.name}</p>
+        <a
+          href={file.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500"
+        >
+          Файлыг нээх
+        </a>
+      </div>
+    );
+  };
+
+  const renderFileItem = (
+    file: FileItem,
+    fileIndex: number,
+    sectionTitle: string
+  ) => (
+    <div className="flex items-center p-2 hover:bg-gray-100 rounded-md group relative">
+      <div
+        className="flex items-center cursor-pointer flex-grow pr-20"
+        onClick={() => handleFileClick(file)}
+      >
+        <FileOutlined className="text-gray-500 mr-2" />
+        <span className="text-gray-600">{file.name}</span>
+      </div>
+
+      {isEditable && (
+        <div className="absolute right-2 hidden group-hover:flex items-center gap-1">
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing({
+                type: "file",
+                sectionTitle,
+                fileIndex,
+                initialValue: file.name,
+              });
+            }}
+          />
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteFile?.(sectionTitle, fileIndex);
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  const renderSectionTitle = (section: ContentSection, index: number) => (
+    <div className="flex items-center flex-grow relative pr-20">
+      <span className="font-medium text-gray-700">
+        {index + 1}. {section.title}
+      </span>
+
+      {isEditable && (
+        <div className="absolute right-2 hidden group-hover:flex items-center gap-1">
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing({
+                type: "section",
+                sectionTitle: section.title,
+                initialValue: section.title,
+              });
+            }}
+          />
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteSection?.(section.title);
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      <div
+        className={`bg-gray-50 rounded-lg p-4 mt-2 border border-gray-200 ${className}`}
+      >
+        <div className="space-y-2">
+          {sections.map((section, index) => (
+            <div
+              key={`section-${index}`}
+              className="border-b border-gray-100 pb-2 last:border-b-0"
+            >
+              <div
+                className="flex items-center cursor-pointer py-2 hover:bg-gray-100 px-2 rounded-md group"
+                onClick={() =>
+                  setExpandedSection(
+                    expandedSection === section.title ? null : section.title
+                  )
+                }
+              >
+                {expandedSection === section.title ? (
+                  <DownOutlined className="text-blue-500 mr-2" />
+                ) : (
+                  <RightOutlined className="text-gray-500 mr-2" />
+                )}
+                {renderSectionTitle(section, index)}
+              </div>
+
+              <div
+                className={`
+                  ml-8 mt-2 space-y-2 
+                  transition-all duration-300 ease-in-out
+                  ${expandedSection === section.title 
+                    ? 'opacity-100 max-h-[500px]' 
+                    : 'opacity-0 max-h-0 overflow-hidden'
+                  }
+                `}
+              >
+                {section.files.map((file, fileIndex) => (
+                  <div
+                    key={fileIndex}
+                    className="transform transition-all duration-200 hover:scale-[1.01]"
+                  >
+                    {renderFileItem(file, fileIndex, section.title)}
+                  </div>
+                ))}
+                
+                {/* Add File button with animation */}
+                {onAddFile && (
+                  <button
+                    onClick={() => onAddFile(section.title)}
+                    className="flex items-center p-2 w-full 
+                      hover:bg-gray-100 rounded-md cursor-pointer text-blue-500
+                      transition-all duration-200 hover:shadow-sm
+                      transform hover:-translate-y-[1px]"
+                  >
+                    <PlusOutlined className="mr-2" />
+                    <span>Файл нэмэх</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {onAddSection && (
+            <button
+              onClick={onAddSection}
+              className="flex items-center py-2 px-2 w-full mt-4 hover:bg-gray-100 rounded-md cursor-pointer text-blue-500 border border-dashed border-gray-300"
+            >
+              <PlusOutlined className="mr-2" />
+              <span>Шинэ сэдэв нэмэх</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <Modal
+        open={!!previewFile}
+        onCancel={() => setPreviewFile(null)}
+        footer={null}
+        width={800}
+        title={previewFile?.name}
+      >
+        {previewFile && renderFilePreview(previewFile)}
+      </Modal>
+
+      <FormModal
+        title={editing?.type === "section" ? "Сэдэв засах" : "Файл засах"}
+        isOpen={!!editing}
+        onClose={() => setEditing(null)}
+        onSubmit={handleModalSubmit}
+        fields={getModalFields()}
+        initialValues={
+          editing
+            ? {
+                [editing.type === "section" ? "title" : "name"]:
+                  editing.initialValue,
+              }
+            : undefined
+        }
+      />
+    </>
+  );
+};
+
+export default CourseContent;
