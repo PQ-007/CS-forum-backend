@@ -1,4 +1,3 @@
-import { Profile } from "../pages/student/profile/type";
 
 type ContentTabsProps = {
 

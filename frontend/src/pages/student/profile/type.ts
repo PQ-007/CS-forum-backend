@@ -1,16 +1,16 @@
 import { JSX } from "react";
 
 export interface Profile {
+  type: string;
   name: string;
   email: string;
-  class: string;
+  departure: string;
+  year: string;
   bio: string;
   following: number;
   followers: number;
-  skills: {
-    programming: string[];
-    language: string[];
-  };
+  programming_skills: string[];
+  language_skills: string[];
   achievements: string[];
   posts?: string[];
   pinned?: string[];
@@ -28,6 +28,7 @@ export interface Profile {
     github?: string;
   };
   joinedDate?: string;
+  photoUrl?: string;
 }
 
 export interface SocialLink {

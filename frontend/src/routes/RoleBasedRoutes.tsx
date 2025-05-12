@@ -5,6 +5,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import StudentProfilePage from "../pages/student/profile";
 import StudentSettingsPage from "../pages/student/settings";
 import { Profile } from "../pages/student/profile/type";
+import { Loading } from "../components/Loading";
 
 // Layouts
 const AuthLayout = lazy(() => import("../layouts/login_page"));
@@ -34,9 +35,7 @@ const TeacherCoursePage = lazy(() => import("../pages/teacher/course"));
 
 // Loading component for Suspense fallback
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center h-screen">
-    <div className="text-lg">Loading...</div>
-  </div>
+  <Loading/>
 );
 
 const RoleBasedRoutes: React.FC = () => {

@@ -8,16 +8,19 @@ import {
   FaInstagram,
   FaSpinner,
 } from "react-icons/fa";
-import { Avatar } from "../../../components/Avatar.tsx";
-import { ProfileInfo } from "../../../components/ProfileInfo.tsx";
-import { BioSection } from "../../../components/BioSection.tsx";
-import { SkillsSection } from "../../../components/SkillSection.tsx";
-import { StatsSection } from "../../../components/StatsSection.tsx";
-import { InterestsSection } from "../../../components/InterestSection.tsx";
-import { ContentTabs } from "../../../components/ContentTabs.tsx";
-
+import { Avatar } from "../../../components/profile/Avatar.tsx";
+import { ProfileInfo } from "../../../components/profile/ProfileInfo.tsx";
+import { BioSection } from "../../../components/profile/BioSection.tsx";
+import { SkillsSection } from "../../../components/profile/SkillSection.tsx";
+import { StatsSection } from "../../../components/profile/StatsSection.tsx";
+import { InterestsSection } from "../../../components/profile/InterestSection.tsx";
+import { ContentTabs } from "../../../components/profile/ContentTabs.tsx";
+import { Loading } from "../../../components/Loading.tsx";
+import profileService from "../../../service/profileService.tsx";
+import {useAuth} from "../../../context/AuthContext.tsx";
 const StudentProfilePage = () => {
   const { uid } = useParams();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("posts");
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -32,61 +35,12 @@ const StudentProfilePage = () => {
       setError(null);
 
       try {
-        // In a real app, you would fetch data from your API
-        // const response = await fetch(`/api/students/${uid}`);
-        // const data = await response.json();
+       if (!uid) {
+         throw new Error("UID is undefined");
+       }
+       const result = await profileService.getProfile(uid);
 
-        // For demo purposes, we'll simulate an API call with a timeout
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
-        const mockData: Profile = {
-          name: "Bilguuntushig",
-          email: "bilguuntushig@example.com",
-          bio: "Би зүгээр л код бичиж чаддаг. Заримдаа онгоцны нисгэгч болохыг хүсдэг. Гэхдээ ихэнхдээ би зүгээр л код бичдэг.",
-          following: 8,
-          followers: 6,
-          skills: {
-            programming: [
-              "HTML",
-              "CSS",
-              "JavaScript",
-              "Python",
-              "C++",
-              "SQL",
-              "React",
-              "Git & GitHub",
-            ],
-            language: ["English", "Mongolian", "Japanese"],
-          },
-          achievements: [],
-          posts: ["Post 1", "Post 2", "Post 3"],
-          projects: ["Project A", "Project B", "Project C"],
-          courses: ["Course 1", "Course 2", "Course 3"],
-          badges: ["Badge 1", "Badge 2", "Badge 3"],
-          pinned: ["Course 1", "Project 1A"],
-          portfolio: "https://bilguuntushig.dev",
-          currentFocus: "Learning TypeScript and contributing to open source",
-          class: "КУ-4",
-          certifications: [
-            "Google Python Certificate",
-            "Responsive Web Design (freeCodeCamp)",
-          ],
-          interests_hobby: [
-            "Web Development",
-            "Machine Learning",
-            "Game Development",
-            "Open Source Contribution",
-          ],
-          socialLinks: {
-            facebook: "#",
-            instagram: "#",
-            youtube: "#",
-            github: "#",
-          },
-          joinedDate: "Jun 20, 2024",
-        };
-
-        setProfile(mockData);
+        setProfile(result);
       } catch (err) {
         console.error("Error fetching profile:", err);
         setError("Failed to load profile data. Please try again later.");
@@ -99,14 +53,7 @@ const StudentProfilePage = () => {
   }, [uid]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <FaSpinner className="animate-spin text-4xl mx-auto text-pink-500 mb-4" />
-          <p className="text-white">Loading profile...</p>
-        </div>
-      </div>
-    );
+    return <Loading/>;
   }
   
   if (error) {
@@ -195,7 +142,7 @@ const StudentProfilePage = () => {
         <div className="relative p-6 rounded-3xl shadow-3xl bg-gradient-to-r from-[#1a1a2e] to-[#16213e] text-white mb-6">
           <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
             <Avatar profile={profile} />
-            <ProfileInfo profile={profile} toggleFollow={toggleFollow} socialLinks={socialLinks} isFollowing={isFollowing} />
+            <ProfileInfo profile={profile} toggleFollow={toggleFollow} socialLinks={socialLinks} isFollowing={isFollowing} myProfile={(user?.uid == uid) ? true : false} />
           </div>
         </div>
 

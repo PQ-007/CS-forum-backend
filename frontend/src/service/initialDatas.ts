@@ -1,0 +1,31 @@
+import { Profile } from "../pages/student/profile/type";
+
+export const initialProfileData: Profile = {
+  name: "",
+  email: "",
+  bio: "",
+  following: 0,
+  followers: 0,
+  programming_skills: [],
+  language_skills: [],
+  achievements: [],
+  posts: [],
+  projects: [],
+  courses: [],
+  badges: [],
+  pinned: [],
+  portfolio: "",
+  currentFocus: "",
+  year: "",
+  departure: "",
+  certifications: [],
+  interests_hobby: [],
+  socialLinks: {
+    facebook: "",
+    instagram: "",
+    youtube: "",
+    github: "",
+  },
+  type: "",
+  joinedDate: "",
+};

@@ -1,4 +1,4 @@
-import { Profile } from "../pages/student/profile/type";
+import { Profile } from "../../pages/student/profile/type";
 
 type InterestProps = {
   profile: Profile;

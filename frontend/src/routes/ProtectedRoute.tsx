@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { Loading } from "../components/Loading";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,16 +18,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const location = useLocation();
   const userRole = userData?.type || "student"; // Default to student if no role found
 
-  // Show loading state while checking authentication
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
+      <Loading/>
     );
   }
 
-  // For protected routes (requireAuth=true)
   if (requireAuth) {
     // If not authorized, redirect to login
     if (!authorized) {

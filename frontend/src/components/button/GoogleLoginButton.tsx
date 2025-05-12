@@ -1,5 +1,5 @@
 import React from "react";
-import authService from "../service/authService";
+import authService from "../../service/authService";
 import { message } from "antd";
 import { useNavigate } from "react-router-dom";
 const GoogleLoginButton: React.FC = () => {
