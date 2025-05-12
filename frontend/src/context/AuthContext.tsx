@@ -2,10 +2,11 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { UserData } from "./type";
 
 interface AuthContextType {
   user: User | null;
-  userData: any;
+  userData: UserData | null;
   loading: boolean;
   authorized: boolean; // New property
 }
