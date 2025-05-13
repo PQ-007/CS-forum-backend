@@ -1,7 +1,16 @@
-import { Form, Input, Button, Typography, Divider, message } from "antd";
+import {
+  Form,
+  Input,
+  Button,
+  Typography,
+  Divider,
+  message,
+  Select,
+} from "antd";
 import { UserOutlined, LockOutlined, MailOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import authService from "../../../service/authService";
+const { Option } = Select;
 
 const { Title, Text } = Typography;
 
@@ -9,9 +18,9 @@ const RegisterPage = () => {
   const navigate = useNavigate();
 
   const onFinish = async (values: any) => {
-    const { email, password, name } = values;
+    const { email, password, name, year } = values;
     try {
-      await authService.register(email, password, name);
+      await authService.register(email, password, name, year);
       message.success("Амжилттай бүртгэгдлээ!");
       navigate("/login");
     } catch (error: any) {
@@ -92,6 +101,21 @@ const RegisterPage = () => {
           />
         </Form.Item>
 
+        <Form.Item
+          name="year"
+          rules={[{ required: true, message: "Курсаа сонгоно уу!" }]}
+        >
+          <Select
+            placeholder="Курс сонгох"
+            prefix={<UserOutlined className="text-gray-400" />}
+          >
+            {[1, 2, 3, 4, 5].map((year) => (
+              <Option key={year} value={year}>
+                {year}-р курс
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
         <Form.Item>
           <Button
             type="primary"

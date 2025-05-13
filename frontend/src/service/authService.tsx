@@ -3,11 +3,13 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signOut,
+  User,
 } from "firebase/auth";
 import { auth, provider, db } from "../firebase";
-import { doc, setDoc } from "firebase/firestore"; 
+import { doc, setDoc } from "firebase/firestore";
 import { initialProfileData } from "./initialDatas";
 import { Profile } from "../pages/student/profile/type";
+import { FirebaseError } from "firebase/app";
 
 class AuthenticationService {
   private static instance: AuthenticationService;
@@ -22,50 +24,59 @@ class AuthenticationService {
   }
 
   // Save user to Firestore
-private async saveUserToFirestore(user: any, name: string): Promise<void> {
-  try {
-    const userRef = doc(db, "users", user.uid);
-    const profileRef = doc(db, "profiles", user.uid);
-
-    // Save basic user info
-    await setDoc(userRef, {
-      email: user.email,
-      type: "student",
-      displayName: name,
-      photoURL: user.photoURL,
-      createdAt: new Date(),
-    });
-
-    // Create initial profile data
-    const userProfile: Profile = {
-      ...initialProfileData,
-      name,
-      email: user.email,
-      type: "student",
-      joinedDate: new Date().toISOString(),
-    };
-
-    await setDoc(profileRef, userProfile);
-  } catch (error: any) {
-    console.error("Error saving user data to Firestore:", error.message);
-    throw error;
-  }
-}
-
-  public async login(email: string, password: string): Promise<void> {
+  private async saveUserToFirestore(
+    user: any,
+    name: string,
+    year?: number
+  ): Promise<void> {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userRef = doc(db, "users", user.uid);
+      const profileRef = doc(db, "profiles", user.uid);
+
+      // Save basic user info
+      await setDoc(userRef, {
+        year: year ?? 1,
+        email: user.email,
+        type: "student",
+        displayName: name,
+        photoURL: user.photoURL,
+        createdAt: new Date(),
+      });
+
+      // Create initial profile data
+      const userProfile: Profile = {
+        ...initialProfileData,
+        name,
+        email: user.email,
+        type: "student",
+        joinedDate: new Date().toISOString(),
+      };
+
+      await setDoc(profileRef, userProfile);
     } catch (error: any) {
-      console.error("Login failed:", error.message);
+      console.error("Error saving user data to Firestore:", error.message);
       throw error;
     }
   }
 
+  public async login(email: string, password: string): Promise<void> {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: unknown) {
+      if (error instanceof FirebaseError) {
+        console.error("Login failed:", error.message);
+      } else {
+        console.error("Unexpected login error:", error);
+      }
+      throw error;
+    }
+  }
 
   public async register(
     email: string,
     password: string,
-    name: string
+    name: string,
+    year?: number
   ): Promise<void> {
     try {
       const userCredential = await createUserWithEmailAndPassword(
@@ -74,9 +85,13 @@ private async saveUserToFirestore(user: any, name: string): Promise<void> {
         password
       );
       console.log("Registered user:", userCredential.user);
-      await this.saveUserToFirestore(userCredential.user, name);
-    } catch (error: any) {
-      console.error("Registration failed:", error.message);
+      await this.saveUserToFirestore(userCredential.user, name, year);
+    } catch (error: unknown) {
+      if (error instanceof FirebaseError) {
+        console.error("Registration failed:", error.message);
+      } else {
+        console.error("Unexpected registration error:", error);
+      }
       throw error;
     }
   }
@@ -84,13 +99,16 @@ private async saveUserToFirestore(user: any, name: string): Promise<void> {
   public async loginWithGoogle(): Promise<void> {
     try {
       const result = await signInWithPopup(auth, provider);
-
       await this.saveUserToFirestore(
         result.user,
         result.user.displayName || "user"
       );
-    } catch (error: any) {
-      console.error("Google login failed:", error.message);
+    } catch (error: unknown) {
+      if (error instanceof FirebaseError) {
+        console.error("Google login failed:", error.message);
+      } else {
+        console.error("Unexpected Google login error:", error);
+      }
       throw error;
     }
   }
@@ -98,8 +116,12 @@ private async saveUserToFirestore(user: any, name: string): Promise<void> {
   public async logout(): Promise<void> {
     try {
       await signOut(auth);
-    } catch (error: any) {
-      console.error("Logout failed:", error.message);
+    } catch (error: unknown) {
+      if (error instanceof FirebaseError) {
+        console.error("Logout failed:", error.message);
+      } else {
+        console.error("Unexpected logout error:", error);
+      }
       throw error;
     }
   }

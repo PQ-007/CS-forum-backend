@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { message } from "antd";
 import {
   CourseData,
@@ -8,6 +7,7 @@ import {
   SectionFormValues,
 } from "../types";
 import { useAuth } from "../../context/AuthContext";
+import CourseService from "../../service/courseService";
 
 interface CourseManagerState {
   courses: CourseData[];
@@ -30,6 +30,20 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
     activeSectionTitle: "",
     editingCourse: null,
   });
+
+  // Fetch courses on mount
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const allCourses = await CourseService.getAllCourses();
+        setState((prev) => ({ ...prev, courses: allCourses }));
+      } catch (error) {
+        message.error("Курсуудыг татахад алдаа гарлаа.");
+        console.error("Error fetching courses:", error);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   const updateState = (updates: Partial<CourseManagerState>) => {
     setState((prev) => ({ ...prev, ...updates }));
@@ -71,46 +85,59 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
     });
   };
 
-  const handleDeleteCourse = (courseTitle: string) => {
-    const updatedCourses = state.courses.filter(
-      (course) => course.title !== courseTitle
-    );
-    updateState({ courses: updatedCourses });
-    message.success("Курс амжилттай устгагдлаа");
+  const handleDeleteCourse = async (courseId: string) => {
+    try {
+      await CourseService.deleteCourse(courseId);
+      const updatedCourses = state.courses.filter(
+        (course) => course.id !== courseId
+      );
+      updateState({ courses: updatedCourses });
+      message.success("Курс амжилттай устгагдлаа");
+    } catch (error) {
+      message.error("Курсыг устгахад алдаа гарлаа.");
+      console.error("Error deleting course:", error);
+    }
   };
 
   const handleModalSubmit = async (values: ModalFormValues) => {
-    let updatedCourses: CourseData[];
+    try {
+      let updatedCourses: CourseData[] = [...state.courses];
 
-    switch (state.modalType) {
-      case "course": {
-        const courseValues = values as CourseFormValues;
-        updatedCourses = handleCourseSubmit(courseValues);
-        break;
+      switch (state.modalType) {
+        case "course": {
+          const courseValues = values as CourseFormValues;
+          updatedCourses = await handleCourseSubmit(courseValues);
+          break;
+        }
+        case "file": {
+          const fileValues = values as FileFormValues;
+          updatedCourses = await handleFileSubmit(fileValues);
+          break;
+        }
+        case "section": {
+          const sectionValues = values as SectionFormValues;
+          updatedCourses = await handleSectionSubmit(sectionValues);
+          break;
+        }
+        default:
+          return;
       }
-      case "file": {
-        const fileValues = values as FileFormValues;
-        updatedCourses = handleFileSubmit(fileValues);
-        break;
-      }
-      case "section": {
-        const sectionValues = values as SectionFormValues;
-        updatedCourses = handleSectionSubmit(sectionValues);
-        break;
-      }
-      default:
-        return;
+
+      updateState({
+        courses: updatedCourses,
+        isModalOpen: false,
+        modalType: null,
+        editingCourse: null,
+      });
+    } catch (error) {
+      message.error("Өөрчлөлт хадгалахад алдаа гарлаа.");
+      console.error("Error submitting modal:", error);
     }
-
-    updateState({
-      courses: updatedCourses,
-      isModalOpen: false,
-      modalType: null,
-      editingCourse: null,
-    });
   };
 
-  const handleCourseSubmit = (values: any): CourseData[] => {
+  const handleCourseSubmit = async (
+    values: CourseFormValues
+  ): Promise<CourseData[]> => {
     const initialContent = Array.from(
       { length: values.modules || 0 },
       (_, index) => ({
@@ -128,136 +155,167 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
       content: initialContent,
     };
 
-    if (state.editingCourse) {
+    if (state.editingCourse?.id) {
+      await CourseService.updateCourse(state.editingCourse.id, newCourse);
       message.success("Курс амжилттай засагдлаа");
       return state.courses.map((course) =>
-        course.title === state.editingCourse!.title ? newCourse : course
+        course.id === state.editingCourse?.id
+          ? { ...newCourse, id: course.id }
+          : course
       );
+    } else {
+      const courseId = await CourseService.createCourse(newCourse);
+      message.success("Курс амжилттай нэмэгдлээ");
+      return [...state.courses, { ...newCourse, id: courseId }];
     }
-
-    message.success("Курс амжилттай нэмэгдлээ");
-    return [...state.courses, newCourse];
   };
 
-  const handleFileSubmit = (values: any): CourseData[] => {
-    if (!values.file) return state.courses;
+  const handleFileSubmit = async (
+    values: FileFormValues
+  ): Promise<CourseData[]> => {
+    if (!values.file || !state.expandedCard) return state.courses;
 
-    return state.courses.map((course) => {
-      if (course.title === state.expandedCard) {
-        const updatedContent = course.content.map((section) => {
-          if (section.title === state.activeSectionTitle) {
-            return {
-              ...section,
-              files: [
-                ...section.files,
-                {
-                  name: values.name,
-                  url: URL.createObjectURL(values.file),
-                  type: values.file.type,
-                  uploadedAt: new Date(),
-                },
-              ],
-            };
-          }
-          return section;
-        });
-        return { ...course, content: updatedContent };
-      }
-      return course;
-    });
-  };
+    const course = state.courses.find((c) => c.title === state.expandedCard);
+    if (!course?.id) return state.courses;
 
-  const handleSectionSubmit = (values: any): CourseData[] => {
-    return state.courses.map((course) => {
-      if (course.title === state.expandedCard) {
+    const updatedContent = course.content.map((section) => {
+      if (section.title === state.activeSectionTitle) {
         return {
-          ...course,
-          content: [...course.content, { title: values.title, files: [] }],
-          modules: course.content.length + 1,
+          ...section,
+          files: [
+            ...section.files,
+            {
+              name: values.name,
+              url: URL.createObjectURL(values.file),
+              type: values.file.type,
+              uploadedAt: new Date(),
+            },
+          ],
         };
       }
-      return course;
+      return section;
     });
+
+    await CourseService.updateCourse(course.id, {
+      ...course,
+      content: updatedContent,
+    });
+    const updatedCourses = state.courses.map((c) =>
+      c.id === course.id ? { ...c, content: updatedContent } : c
+    );
+    return updatedCourses;
   };
 
-  const handleSectionEdit = (oldTitle: string, newTitle: string) => {
-    const updatedCourses = state.courses.map((course) => {
-      if (course.title === state.expandedCard) {
-        const updatedContent = course.content.map((section) => {
-          if (section.title === oldTitle) {
-            return { ...section, title: newTitle };
-          }
-          return section;
-        });
-        return { ...course, content: updatedContent };
-      }
-      return course;
+  const handleSectionSubmit = async (
+    values: SectionFormValues
+  ): Promise<CourseData[]> => {
+    if (!state.expandedCard) return state.courses;
+
+    const course = state.courses.find((c) => c.title === state.expandedCard);
+    if (!course?.id) return state.courses;
+
+    const updatedContent = [
+      ...course.content,
+      { title: values.title, files: [] },
+    ];
+    const updatedCourse = {
+      ...course,
+      content: updatedContent,
+      modules: updatedContent.length,
+    };
+
+    await CourseService.updateCourse(course.id, updatedCourse);
+    return state.courses.map((c) => (c.id === course.id ? updatedCourse : c));
+  };
+
+  const handleSectionEdit = async (oldTitle: string, newTitle: string) => {
+    const course = state.courses.find((c) => c.title === state.expandedCard);
+    if (!course?.id) return;
+
+    const updatedContent = course.content.map((section) =>
+      section.title === oldTitle ? { ...section, title: newTitle } : section
+    );
+    await CourseService.updateCourse(course.id, {
+      ...course,
+      content: updatedContent,
     });
-    updateState({ courses: updatedCourses });
+    updateState({
+      courses: state.courses.map((c) =>
+        c.id === course.id ? { ...c, content: updatedContent } : c
+      ),
+    });
     message.success("Сэдвийн нэр өөрчлөгдлөө");
   };
 
-  const handleFileEdit = (
+  const handleFileEdit = async (
     sectionTitle: string,
     fileIndex: number,
     newName: string
   ) => {
-    const updatedCourses = state.courses.map((course) => {
-      if (course.title === state.expandedCard) {
-        const updatedContent = course.content.map((section) => {
-          if (section.title === sectionTitle) {
-            const updatedFiles = [...section.files];
-            updatedFiles[fileIndex] = {
-              ...updatedFiles[fileIndex],
-              name: newName,
-            };
-            return { ...section, files: updatedFiles };
-          }
-          return section;
-        });
-        return { ...course, content: updatedContent };
+    const course = state.courses.find((c) => c.title === state.expandedCard);
+    if (!course?.id) return;
+
+    const updatedContent = course.content.map((section) => {
+      if (section.title === sectionTitle) {
+        const updatedFiles = [...section.files];
+        updatedFiles[fileIndex] = { ...updatedFiles[fileIndex], name: newName };
+        return { ...section, files: updatedFiles };
       }
-      return course;
+      return section;
     });
-    updateState({ courses: updatedCourses });
+    await CourseService.updateCourse(course.id, {
+      ...course,
+      content: updatedContent,
+    });
+    updateState({
+      courses: state.courses.map((c) =>
+        c.id === course.id ? { ...c, content: updatedContent } : c
+      ),
+    });
     message.success("Файлын нэр өөрчлөгдлөө");
   };
 
-  const handleDeleteFile = (sectionTitle: string, fileIndex: number) => {
-    const updatedCourses = state.courses.map((course) => {
-      if (course.title === state.expandedCard) {
-        const updatedContent = course.content.map((section) => {
-          if (section.title === sectionTitle) {
-            const updatedFiles = section.files.filter(
-              (_, i) => i !== fileIndex
-            );
-            return { ...section, files: updatedFiles };
-          }
-          return section;
-        });
-        return { ...course, content: updatedContent };
+  const handleDeleteFile = async (sectionTitle: string, fileIndex: number) => {
+    const course = state.courses.find((c) => c.title === state.expandedCard);
+    if (!course?.id) return;
+
+    const updatedContent = course.content.map((section) => {
+      if (section.title === sectionTitle) {
+        const updatedFiles = section.files.filter((_, i) => i !== fileIndex);
+        return { ...section, files: updatedFiles };
       }
-      return course;
+      return section;
     });
-    updateState({ courses: updatedCourses });
+    await CourseService.updateCourse(course.id, {
+      ...course,
+      content: updatedContent,
+    });
+    updateState({
+      courses: state.courses.map((c) =>
+        c.id === course.id ? { ...c, content: updatedContent } : c
+      ),
+    });
     message.success("Файл устгагдлаа");
   };
 
-  const handleDeleteSection = (sectionTitle: string) => {
-    const updatedCourses = state.courses.map((course) => {
-      if (course.title === state.expandedCard) {
-        const updatedContent = course.content.filter(
-          (section) => section.title !== sectionTitle
-        );
-        return {
-          ...course,
-          content: updatedContent,
-          modules: updatedContent.length,
-        };
-      }
-      return course;
+  const handleDeleteSection = async (sectionTitle: string) => {
+    const course = state.courses.find((c) => c.title === state.expandedCard);
+    if (!course?.id) return;
+
+    const updatedContent = course.content.filter(
+      (section) => section.title !== sectionTitle
+    );
+    const updatedCourse = {
+      ...course,
+      content: updatedContent,
+      modules: updatedContent.length,
+    };
+    await CourseService.updateCourse(course.id, updatedCourse);
+    updateState({
+      courses: state.courses.map((c) =>
+        c.id === course.id ? updatedCourse : c
+      ),
     });
-    updateState({ courses: updatedCourses });
     message.success("Сэдэв устгагдлаа");
   };
 

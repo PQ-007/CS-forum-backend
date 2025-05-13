@@ -2,6 +2,7 @@ import { Profile } from "../pages/student/profile/type";
 
 export const initialProfileData: Profile = {
   name: "",
+  year: 0,
   email: "",
   bio: "",
   following: 0,
@@ -16,7 +17,6 @@ export const initialProfileData: Profile = {
   pinned: [],
   portfolio: "",
   currentFocus: "",
-  year: "",
   departure: "",
   certifications: [],
   interests_hobby: [],

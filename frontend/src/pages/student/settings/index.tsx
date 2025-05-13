@@ -245,8 +245,8 @@ const StudentSettingsPage = () => {
           <input
             className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-[#334155] focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
             placeholder="Grade (example: 1st year, 2st year)"
-            value={profile.grade || ""}
-            onChange={(e) => handleChange(e, "grade")}
+            value={profile.year || ""}
+            onChange={(e) => handleChange(e, "year")}
           />
           <textarea
             className="w-full px-4 py-2 rounded-lg bg-[#0f172a] text-white border border-[#334155] focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"

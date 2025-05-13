@@ -5,7 +5,7 @@ export interface Profile {
   name: string;
   email: string;
   departure: string;
-  year: string;
+  year: number;
   bio: string;
   following: number;
   followers: number;

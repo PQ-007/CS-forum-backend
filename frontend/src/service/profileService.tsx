@@ -33,9 +33,17 @@ class ProfileService {
   }
 
   // Update a user's profile by UID
-  public async updateProfile(uid: string, updatedData: Partial<Profile>): Promise<void> {
+  public async updateProfile(
+    uid: string,
+    updatedData: Partial<Profile>
+  ): Promise<void> {
     try {
       const profileRef = doc(db, "profiles", uid);
+      const userRef = doc(db, "users", uid);
+      await updateDoc(userRef, {
+        displayName: updatedData.name,
+        year: updatedData.year,
+      });
       await updateDoc(profileRef, updatedData);
     } catch (error: any) {
       console.error("Error updating profile:", error.message);
@@ -44,7 +52,10 @@ class ProfileService {
   }
 
   // (Optional) Reset profile to default
-  public async resetProfile(uid: string, defaultProfile: Profile): Promise<void> {
+  public async resetProfile(
+    uid: string,
+    defaultProfile: Profile
+  ): Promise<void> {
     try {
       const profileRef = doc(db, "profiles", uid);
       await setDoc(profileRef, defaultProfile);

@@ -7,6 +7,15 @@ export type User = {
   token?: string;
 };
 
+export interface UserData {
+  email: string;
+  type: string;
+  displayName: string;
+  photoURL?: string;
+  createdAt: Date;
+  year?: number; // Added year for students
+}
+
 export interface DataType {
   authorized?: boolean;
   user?: User;
