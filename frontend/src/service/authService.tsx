@@ -7,6 +7,8 @@ import {
 } from "firebase/auth";
 import { auth, provider, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
+import { initialProfileData } from "./initialDatas";
+import { Profile } from "../pages/student/profile/type";
 import { FirebaseError } from "firebase/app";
 
 class AuthenticationService {
@@ -21,27 +23,38 @@ class AuthenticationService {
     return AuthenticationService.instance;
   }
 
+  // Save user to Firestore
   private async saveUserToFirestore(
-    user: User,
+    user: any,
     name: string,
     year?: number
   ): Promise<void> {
     try {
       const userRef = doc(db, "users", user.uid);
+      const profileRef = doc(db, "profiles", user.uid);
+
+      // Save basic user info
       await setDoc(userRef, {
+        year: year ?? 1,
         email: user.email,
         type: "student",
         displayName: name,
-        photoURL: user.photoURL || null,
+        photoURL: user.photoURL,
         createdAt: new Date(),
-        ...(year && { year }),
       });
-    } catch (error: unknown) {
-      if (error instanceof FirebaseError) {
-        console.error("Error saving user data to Firestore:", error.message);
-      } else {
-        console.error("Unexpected error saving user data:", error);
-      }
+
+      // Create initial profile data
+      const userProfile: Profile = {
+        ...initialProfileData,
+        name,
+        email: user.email,
+        type: "student",
+        joinedDate: new Date().toISOString(),
+      };
+
+      await setDoc(profileRef, userProfile);
+    } catch (error: any) {
+      console.error("Error saving user data to Firestore:", error.message);
       throw error;
     }
   }

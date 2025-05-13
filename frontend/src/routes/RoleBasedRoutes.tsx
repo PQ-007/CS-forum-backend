@@ -2,6 +2,10 @@ import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
+import StudentProfilePage from "../pages/student/profile";
+import StudentSettingsPage from "../pages/student/settings";
+import { Profile } from "../pages/student/profile/type";
+import { Loading } from "../components/Loading";
 
 // Layouts
 const AuthLayout = lazy(() => import("../layouts/login_page"));
@@ -20,6 +24,7 @@ const DashboardContent = lazy(
 const StudentHomePage = lazy(() => import("../pages/student/home"));
 const StudentCoursePage = lazy(() => import("../pages/student/course"));
 
+
 // Teacher Pages - Uncomment when implementing
 // const TeacherHomePage = lazy(() => import("../pages/teacher/home"));
 const TeacherCoursePage = lazy(() => import("../pages/teacher/course"));
@@ -30,9 +35,7 @@ const TeacherCoursePage = lazy(() => import("../pages/teacher/course"));
 
 // Loading component for Suspense fallback
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center h-screen">
-    <div className="text-lg">Loading...</div>
-  </div>
+  <Loading/>
 );
 
 const RoleBasedRoutes: React.FC = () => {
@@ -112,10 +115,14 @@ const RoleBasedRoutes: React.FC = () => {
             }
           />
           <Route
-            path="profile"
+            path={`profile/:uid`}
+            element={<DashboardContent mainContent={<StudentProfilePage />} />}
+          />
+          <Route
+            path={`settings/:uid`}
             element={
               <DashboardContent
-                mainContent={<div>Student Profile Content</div>}
+                mainContent={<StudentSettingsPage />}
               />
             }
           />

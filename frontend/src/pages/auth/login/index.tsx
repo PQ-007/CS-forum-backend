@@ -9,7 +9,7 @@ import {
 } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
-import GoogleLoginButton from "../../../components/GoogleLoginButton";
+import GoogleLoginButton from "../../../components/button/GoogleLoginButton";
 import authService from "../../../service/authService";
 
 const { Title, Text } = Typography;

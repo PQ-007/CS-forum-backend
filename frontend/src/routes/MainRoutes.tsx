@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "../routes/ProtectedRoute";
+import { Loading } from "../components/Loading";
 
 // Layouts
 const AuthLayout = lazy(() => import("../layouts/login_page"));
@@ -21,9 +22,7 @@ const DashboardContent = lazy(
 
 // Loading component for Suspense fallback
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center h-screen">
-    <div className="text-lg">Loading...</div>
-  </div>
+ <Loading/>
 );
 
 const MainRoutes: React.FC = () => {

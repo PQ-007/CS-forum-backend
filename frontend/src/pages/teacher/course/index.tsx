@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "../../../context/AuthContext";
-import AddButton from "../../../components/AddButton";
+import AddButton from "../../../components/button/AddButton";
 import FormModal from "../../../components/Modal";
 import { courseFields, fileFields, sectionFields } from "../type";
 import { CourseData, ModalFormValues } from "../../../components/types";
