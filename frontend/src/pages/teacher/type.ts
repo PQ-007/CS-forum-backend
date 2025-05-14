@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { message } from "antd";
-import { FieldType } from "../../components/Modal";
 
 export const courseFields = [
   {
@@ -25,24 +23,24 @@ export const courseFields = [
         type: "number",
         min: 1,
         max: 5,
-        message: "Тоо оруулна уу!",
+        message: "1-ээс 5-н хооронд тоо оруулна уу!",
       },
     ],
   },
 ];
 
-export const fileFields: FieldType[] = [
+export const fileFields = [
   {
     name: "name",
     label: "Файлын нэр",
     type: "text" as const,
-    rules: [{ required: true, message: "Файлын нэр оруулна уу!" }],
+    rules: [{ required: true, message: "Файлын нэрээ оруулна уу!" }],
   },
   {
     name: "file",
     label: "Файл",
     type: "upload" as const,
-    rules: [{ required: true, message: "Файл оруулна уу!" }],
+    rules: [{ required: true, message: "Файлаа оруулна уу!" }],
     validation: {
       maxSize: 10 * 1024 * 1024, // 10MB
       allowedTypes: [
@@ -66,6 +64,6 @@ export const sectionFields = [
     name: "title",
     label: "Сэдвийн нэр",
     type: "text" as const,
-    rules: [{ required: true, message: "Сэдвийн нэр оруулна уу!" }],
+    rules: [{ required: true, message: "Сэдвийн нэрээ оруулна уу!" }],
   },
 ];

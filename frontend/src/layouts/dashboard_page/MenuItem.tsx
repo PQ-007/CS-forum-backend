@@ -5,6 +5,7 @@ import {
   DashboardOutlined,
   FormOutlined,
   NotificationOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 
 // Student Menu Items
@@ -18,6 +19,11 @@ export const StudentMenuItems = [
     icon: <BookOutlined />,
     label: "Хичээл",
     path: "/dashboard/student/course",
+  },
+  {
+    icon: <CalendarOutlined />,
+    label: "Даалгавар",
+    path: "/dashboard/student/assignment",
   },
   {
     icon: <FormOutlined />,
@@ -42,6 +48,11 @@ export const TeacherMenuItems = [
     icon: <BookOutlined />,
     label: "Хичээл",
     path: "/dashboard/teacher/course",
+  },
+  {
+    icon: <CalendarOutlined />,
+    label: "Даалгавар",
+    path: "/dashboard/teacher/assignment",
   },
   {
     icon: <TeamOutlined />,

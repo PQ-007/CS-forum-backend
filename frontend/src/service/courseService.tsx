@@ -7,6 +7,7 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { CourseData } from "../components/types";
@@ -100,15 +101,28 @@ class CourseService {
 
   public async deleteCourse(courseId: string): Promise<void> {
     try {
-      const courseRef = doc(db, "courses", courseId);
-      await deleteDoc(courseRef);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Error deleting course:", error.message);
-      } else {
-        console.error("Unexpected error deleting course:", error);
+      if (!courseId) {
+        throw new Error("Course ID is required for deletion");
       }
-      throw error;
+
+      console.log("CourseService: Deleting course with ID:", courseId);
+
+      const courseRef = doc(db, "courses", courseId);
+
+      // Verify the course exists before deletion
+      const courseDoc = await getDoc(courseRef);
+      if (!courseDoc.exists()) {
+        throw new Error(`Course with ID ${courseId} not found`);
+      }
+
+      await deleteDoc(courseRef);
+      console.log("CourseService: Course deleted successfully:", courseId);
+    } catch (error: unknown) {
+      console.error("Error deleting course:", error);
+      if (error instanceof Error) {
+        throw new Error(`Failed to delete course: ${error.message}`);
+      }
+      throw new Error("Failed to delete course");
     }
   }
 }

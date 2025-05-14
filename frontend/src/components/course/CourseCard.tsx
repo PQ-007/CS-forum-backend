@@ -60,6 +60,7 @@ const CourseCard = React.memo<CourseCardProps>(
     className = "",
     actions,
     contentActions,
+    id,
   }) => {
     const gradientClass = getGradientByTitle(title);
 
@@ -77,7 +78,17 @@ const CourseCard = React.memo<CourseCardProps>(
 
     const handleDeleteClick = (e: React.MouseEvent) => {
       e.stopPropagation();
-      actions?.onDelete?.(title);
+      if (!actions?.onDelete) return;
+
+      // Log deletion attempt
+      console.log("Attempting to delete course:", { id, title });
+
+      if (!id) {
+        console.error("No course ID available for deletion");
+        return;
+      }
+
+      actions.onDelete(id);
     };
 
     return (

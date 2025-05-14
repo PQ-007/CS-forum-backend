@@ -16,6 +16,7 @@ export interface FileItem {
   url: string;
   type?: string;
   uploadedAt?: Date;
+  storagePath?: string;
 }
 
 export interface ContentSection {
@@ -44,7 +45,11 @@ export interface ContentActions {
   onAddFile?: (sectionTitle: string) => void;
   onAddSection?: () => void;
   onEditSection?: (oldTitle: string, newTitle: string) => void;
-  onEditFile?: (sectionTitle: string, fileIndex: number, newName: string) => void;
+  onEditFile?: (
+    sectionTitle: string,
+    fileIndex: number,
+    newName: string
+  ) => void;
   onDeleteFile?: (sectionTitle: string, fileIndex: number) => void;
   onDeleteSection?: (sectionTitle: string) => void;
 }
@@ -73,4 +78,60 @@ export interface SectionFormValues {
   title: string;
 }
 
-export type ModalFormValues = CourseFormValues | FileFormValues | SectionFormValues;
+export type ModalFormValues =
+  | CourseFormValues
+  | FileFormValues
+  | SectionFormValues;
+
+export type Assignment = {
+  id: string;
+  courseId: string;
+  year: number;
+  title: string;
+  deadline: string; // ISO string
+  description: string;
+};
+
+export interface AssignmentCalendarProps {
+  mode: "teacher" | "student";
+  assignments: Assignment[];
+  courses: CourseData[];
+  onAddAssignment?: (assignment: Omit<Assignment, "id">) => void;
+  onDeleteAssignment?: (assignmentId: string) => void;
+}
+
+export const assignmentFields = [
+  {
+    name: "year",
+    label: "Курс",
+    type: "select" as const,
+    options: [
+      { value: 1, label: "1-р курс" },
+      { value: 2, label: "2-р курс" },
+      { value: 3, label: "3-р курс" },
+      { value: 4, label: "4-р курс" },
+      { value: 5, label: "5-р курс" },
+    ],
+    rules: [{ required: true, message: "Курс сонгоно уу!" }],
+  },
+  {
+    name: "courseId",
+    label: "Хичээл",
+    type: "select" as const,
+    // options will be set dynamically based on year
+    rules: [{ required: true, message: "Хичээл сонгоно уу!" }],
+    dependencies: ["year"],
+  },
+  {
+    name: "deadline",
+    label: "Дуусах огноо",
+    type: "date" as const,
+    rules: [{ required: true, message: "Дуусах огноо сонгоно уу!" }],
+  },
+  {
+    name: "description",
+    label: "Тайлбар",
+    type: "textarea" as const,
+    rules: [{ required: true, message: "Тайлбар оруулна уу!" }],
+  },
+];
