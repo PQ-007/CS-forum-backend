@@ -66,7 +66,9 @@ const CourseCard = React.memo<CourseCardProps>(
 
     const handleEditClick = (e: React.MouseEvent) => {
       e.stopPropagation();
+      console.log("CourseCard: Triggering onEdit for course:", { id, title });
       actions?.onEdit?.({
+        id,
         title,
         year,
         modules,
@@ -80,7 +82,6 @@ const CourseCard = React.memo<CourseCardProps>(
       e.stopPropagation();
       if (!actions?.onDelete) return;
 
-      // Log deletion attempt
       console.log("Attempting to delete course:", { id, title });
 
       if (!id) {

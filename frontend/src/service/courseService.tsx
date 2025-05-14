@@ -49,13 +49,29 @@ class CourseService {
   public async getAllCourses(): Promise<CourseData[]> {
     try {
       const querySnapshot = await getDocs(this.coursesRef);
-      return querySnapshot.docs.map(
+      const courses = querySnapshot.docs.map(
         (doc) =>
           ({
             id: doc.id,
             ...doc.data(),
           } as CourseData)
       );
+      console.log(
+        "Fetched courses:",
+        courses.map((c) => ({
+          id: c.id,
+          title: c.title,
+          content: c.content.map((s) => ({
+            title: s.title,
+            files: s.files.map((f) => ({
+              name: f.name,
+              uploadedAt: f.uploadedAt,
+              uploadedAtType: typeof f.uploadedAt,
+            })),
+          })),
+        }))
+      );
+      return courses;
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error fetching all courses:", error.message);
@@ -87,8 +103,85 @@ class CourseService {
     courseData: Partial<CourseData>
   ): Promise<void> {
     try {
+      console.log("CourseService.updateCourse called with:", {
+        courseId,
+        courseData: {
+          title: courseData.title,
+          year: courseData.year,
+          contentLength: courseData.content?.length,
+          modules: courseData.modules,
+        },
+      });
+
+      if (!courseId) {
+        throw new Error("Course ID is required for update");
+      }
+
       const courseRef = doc(db, "courses", courseId);
-      await updateDoc(courseRef, courseData);
+
+      // Verify the course exists
+      const courseDoc = await getDoc(courseRef);
+      if (!courseDoc.exists()) {
+        throw new Error(`Course with ID ${courseId} not found`);
+      }
+
+      // Prepare data for Firestore update
+      const preparedData: Record<string, any> = {};
+
+      // Process each field in courseData
+      for (const [key, value] of Object.entries(courseData)) {
+        if (key === "content" && Array.isArray(value)) {
+          preparedData[key] = value.map((section) => ({
+            title: section.title,
+            files: section.files.map((file) => {
+              // Validate and normalize uploadedAt
+              let uploadedAt: Date;
+              if (
+                file.uploadedAt instanceof Date &&
+                !isNaN(file.uploadedAt.getTime())
+              ) {
+                uploadedAt = file.uploadedAt;
+              } else if (
+                file.uploadedAt &&
+                typeof file.uploadedAt === "string"
+              ) {
+                const parsedDate = new Date(file.uploadedAt);
+                uploadedAt = isNaN(parsedDate.getTime())
+                  ? new Date()
+                  : parsedDate;
+              } else {
+                uploadedAt = new Date(); // Fallback to current time
+              }
+
+              console.log("Processing file in updateCourse:", {
+                fileName: file.name,
+                uploadedAtRaw: file.uploadedAt,
+                uploadedAtType: typeof file.uploadedAt,
+                normalizedUploadedAt: uploadedAt,
+              });
+
+              return {
+                name: file.name,
+                url: file.url,
+                type: file.type,
+                uploadedAt,
+                storagePath: file.storagePath,
+              };
+            }),
+          }));
+        } else {
+          preparedData[key] = value;
+        }
+      }
+
+      console.log(
+        "Prepared data for Firestore update - keys:",
+        Object.keys(preparedData)
+      );
+
+      // Perform the update
+      await updateDoc(courseRef, preparedData);
+      console.log("CourseService: Course updated successfully:", courseId);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error updating course:", error.message);

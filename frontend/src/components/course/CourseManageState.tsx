@@ -37,6 +37,10 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
     const fetchCourses = async () => {
       try {
         const allCourses = await CourseService.getAllCourses();
+        console.log(
+          "Fetched courses:",
+          allCourses.map((c) => ({ id: c.id, title: c.title }))
+        );
         setState((prev) => ({ ...prev, courses: allCourses }));
       } catch (error) {
         message.error("Курсуудыг татахад алдаа гарлаа.");
@@ -61,19 +65,29 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
   };
 
   const handleAddCourse = () => {
-    updateState({ modalType: "course", isModalOpen: true });
+    updateState({
+      modalType: "course",
+      isModalOpen: true,
+      editingCourse: null,
+    });
   };
 
   const handleEditCourse = (course: CourseData) => {
+    console.log("Editing course:", {
+      id: course.id,
+      title: course.title,
+      hasId: !!course.id,
+    });
+    const courseCopy = JSON.parse(JSON.stringify(course));
+
     updateState({
-      editingCourse: course,
+      editingCourse: courseCopy,
       modalType: "course",
       isModalOpen: true,
     });
   };
 
   const handleAddFile = (sectionTitle: string) => {
-    // Get current course
     const course = state.courses.find((c) => c.title === state.expandedCard);
     if (!course) {
       message.error("Курс олдсонгүй");
@@ -85,26 +99,25 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
       return;
     }
 
-    // Validate the section exists in the course
     const sectionExists = course.content.some((s) => s.title === sectionTitle);
     if (!sectionExists) {
       message.error("Сэдэв олдсонгүй");
       return;
     }
 
-    // Log the state before update
     console.log("Adding file to course:", {
       courseId: course.id,
       sectionTitle: sectionTitle,
       courseTitle: course.title,
     });
 
-    // Update state with the active section and course ID
+    const courseCopy = JSON.parse(JSON.stringify(course));
+
     updateState({
       activeSectionTitle: sectionTitle,
       modalType: "file",
       isModalOpen: true,
-      editingCourse: course,
+      editingCourse: courseCopy,
     });
   };
 
@@ -117,7 +130,7 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
       isModalOpen: false,
       modalType: null,
       editingCourse: null,
-      activeSectionTitle: "", // Clear the active section when modal closes
+      activeSectionTitle: "",
     });
   };
 
@@ -134,7 +147,6 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
 
       console.log("Found course to delete:", courseToDelete);
 
-      // Delete all files in all sections first
       for (const section of courseToDelete.content) {
         console.log("Processing section:", section.title);
         for (const file of section.files) {
@@ -144,17 +156,14 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
               await deleteFile(file.storagePath);
             } catch (error) {
               console.error("Error deleting file:", file.storagePath, error);
-              // Continue with other files even if one fails
             }
           }
         }
       }
 
-      // Delete the course from the database
       console.log("Deleting course from database:", courseId);
       await CourseService.deleteCourse(courseId);
 
-      // Update local state
       updateState({
         courses: state.courses.filter((course) => course.id !== courseId),
         expandedCard:
@@ -174,12 +183,11 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
     try {
       let updatedCourses: CourseData[] = [...state.courses];
 
-      // Log the current state and values for debugging
       console.log("Modal submit state:", {
         modalType: state.modalType,
         expandedCard: state.expandedCard,
         activeSectionTitle: state.activeSectionTitle,
-        editingCourse: state.editingCourse,
+        editingCourseId: state.editingCourse?.id,
         values,
       });
 
@@ -191,7 +199,6 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
         }
         case "file": {
           const fileValues = values as FileFormValues;
-          // Validate required data is present
           if (!state.editingCourse?.id) {
             throw new Error("No course selected");
           }
@@ -215,7 +222,7 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
         isModalOpen: false,
         modalType: null,
         editingCourse: null,
-        activeSectionTitle: "", // Clear active section after successful submit
+        activeSectionTitle: "",
       });
     } catch (error) {
       console.error("Error submitting modal:", error);
@@ -230,32 +237,70 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
   const handleCourseSubmit = async (
     values: CourseFormValues
   ): Promise<CourseData[]> => {
-    const initialContent = Array.from(
-      { length: values.modules || 0 },
-      (_, index) => ({
-        title: `Section ${index + 1}`,
-        files: [],
-      })
-    );
+    console.log("handleCourseSubmit called with:", values);
+    console.log("Editing course state:", state.editingCourse);
 
-    const newCourse: CourseData = {
-      title: values.title,
-      year: values.year,
-      modules: initialContent.length,
-      author: userData?.displayName || "Unknown Teacher",
-      description: values.description,
-      content: initialContent,
-    };
+    if (state.editingCourse && !state.editingCourse.id) {
+      console.error("Editing course has no ID:", state.editingCourse);
+      message.error("Курсын ID олдсонгүй");
+      return state.courses;
+    }
 
     if (state.editingCourse?.id) {
-      await CourseService.updateCourse(state.editingCourse.id, newCourse);
-      message.success("Курс амжилттай засагдлаа");
-      return state.courses.map((course) =>
-        course.id === state.editingCourse?.id
-          ? { ...newCourse, id: course.id }
-          : course
-      );
+      console.log("EDITING EXISTING COURSE WITH ID:", state.editingCourse.id);
+
+      try {
+        const updateData: Partial<CourseData> = {
+          title: values.title,
+          year: values.year,
+          description: values.description,
+          content: state.editingCourse.content,
+          modules: state.editingCourse.modules,
+          author:
+            state.editingCourse.author ||
+            userData?.displayName ||
+            "Unknown Teacher",
+        };
+
+        console.log("Updating course with data:", updateData);
+
+        await CourseService.updateCourse(state.editingCourse.id, updateData);
+        console.log("Course updated in database successfully");
+
+        const updatedCourses = state.courses.map((course) => {
+          if (course.id === state.editingCourse?.id) {
+            return {
+              ...course,
+              ...updateData,
+            };
+          }
+          return course;
+        });
+
+        message.success("Курс амжилттай засагдлаа");
+        return updatedCourses;
+      } catch (error) {
+        console.error("Error updating course:", error);
+        throw error;
+      }
     } else {
+      const initialContent = Array.from(
+        { length: values.modules || 0 },
+        (_, index) => ({
+          title: `Section ${index + 1}`,
+          files: [],
+        })
+      );
+
+      const newCourse: CourseData = {
+        title: values.title,
+        year: values.year,
+        modules: initialContent.length,
+        author: userData?.displayName || "Unknown Teacher",
+        description: values.description,
+        content: initialContent,
+      };
+
       const courseId = await CourseService.createCourse(newCourse);
       message.success("Курс амжилттай нэмэгдлээ");
       return [...state.courses, { ...newCourse, id: courseId }];
@@ -265,7 +310,6 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
   const handleFileSubmit = async (
     values: FileFormValues
   ): Promise<CourseData[]> => {
-    // Log the incoming values
     console.log("handleFileSubmit received values:", values);
 
     if (!values.file) {
@@ -288,7 +332,6 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
     }
 
     try {
-      // Log upload parameters
       console.log("Uploading file with params:", {
         courseId: editingCourse.id,
         sectionTitle: state.activeSectionTitle,
@@ -297,18 +340,15 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
         fileType: values.file.type,
       });
 
-      // Create FormData and append all required fields
       const formData = new FormData();
       formData.append("file", values.file);
       formData.append("courseId", editingCourse.id);
       formData.append("sectionTitle", state.activeSectionTitle);
 
-      // Log FormData contents
       for (const pair of formData.entries()) {
         console.log("FormData entry:", pair[0], pair[1]);
       }
 
-      // Upload file to the server
       const fileData = await uploadFile(
         values.file,
         editingCourse.id,
@@ -320,7 +360,6 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
         throw new Error("Invalid response from file upload");
       }
 
-      // Find the section and update its files
       const updatedContent = editingCourse.content.map((section) => {
         if (section.title === state.activeSectionTitle) {
           return {
@@ -340,15 +379,12 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
         return section;
       });
 
-      // Update the course in the database
       await CourseService.updateCourse(editingCourse.id, {
-        ...editingCourse,
         content: updatedContent,
       });
 
       message.success("Файл амжилттай нэмэгдлээ");
 
-      // Update local state
       return state.courses.map((c) =>
         c.id === editingCourse.id ? { ...c, content: updatedContent } : c
       );
@@ -373,14 +409,22 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
       ...course.content,
       { title: values.title, files: [] },
     ];
-    const updatedCourse = {
-      ...course,
+
+    await CourseService.updateCourse(course.id, {
       content: updatedContent,
       modules: updatedContent.length,
-    };
+    });
 
-    await CourseService.updateCourse(course.id, updatedCourse);
-    return state.courses.map((c) => (c.id === course.id ? updatedCourse : c));
+    return state.courses.map((c) => {
+      if (c.id === course.id) {
+        return {
+          ...c,
+          content: updatedContent,
+          modules: updatedContent.length,
+        };
+      }
+      return c;
+    });
   };
 
   const handleSectionEdit = async (oldTitle: string, newTitle: string) => {
@@ -390,10 +434,11 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
     const updatedContent = course.content.map((section) =>
       section.title === oldTitle ? { ...section, title: newTitle } : section
     );
+
     await CourseService.updateCourse(course.id, {
-      ...course,
       content: updatedContent,
     });
+
     updateState({
       courses: state.courses.map((c) =>
         c.id === course.id ? { ...c, content: updatedContent } : c
@@ -413,15 +458,24 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
     const updatedContent = course.content.map((section) => {
       if (section.title === sectionTitle) {
         const updatedFiles = [...section.files];
-        updatedFiles[fileIndex] = { ...updatedFiles[fileIndex], name: newName };
+        updatedFiles[fileIndex] = {
+          ...updatedFiles[fileIndex],
+          name: newName,
+          uploadedAt:
+            updatedFiles[fileIndex].uploadedAt instanceof Date &&
+            !isNaN(updatedFiles[fileIndex].uploadedAt.getTime())
+              ? updatedFiles[fileIndex].uploadedAt
+              : new Date(),
+        };
         return { ...section, files: updatedFiles };
       }
       return section;
     });
+
     await CourseService.updateCourse(course.id, {
-      ...course,
       content: updatedContent,
     });
+
     updateState({
       courses: state.courses.map((c) =>
         c.id === course.id ? { ...c, content: updatedContent } : c
@@ -450,7 +504,6 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
         return;
       }
 
-      // Delete file from server
       await deleteFile(file.storagePath);
 
       const updatedContent = course.content.map((section) => {
@@ -462,7 +515,6 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
       });
 
       await CourseService.updateCourse(course.id, {
-        ...course,
         content: updatedContent,
       });
 
@@ -486,7 +538,6 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
     }
 
     try {
-      // Find the section to delete
       const sectionToDelete = course.content.find(
         (s) => s.title === sectionTitle
       );
@@ -495,37 +546,36 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
         return;
       }
 
-      // Delete all files in the section first
       for (const file of sectionToDelete.files) {
         if (file.storagePath) {
           try {
             await deleteFile(file.storagePath);
           } catch (error) {
             console.error("Error deleting file:", error);
-            // Continue with other files even if one fails
           }
         }
       }
 
-      // Remove the section from the course content
       const updatedContent = course.content.filter(
         (section) => section.title !== sectionTitle
       );
 
-      const updatedCourse = {
-        ...course,
+      await CourseService.updateCourse(course.id, {
         content: updatedContent,
         modules: updatedContent.length,
-      };
+      });
 
-      // Update the course in the database
-      await CourseService.updateCourse(course.id, updatedCourse);
-
-      // Update local state
       updateState({
-        courses: state.courses.map((c) =>
-          c.id === course.id ? updatedCourse : c
-        ),
+        courses: state.courses.map((c) => {
+          if (c.id === course.id) {
+            return {
+              ...c,
+              content: updatedContent,
+              modules: updatedContent.length,
+            };
+          }
+          return c;
+        }),
       });
 
       message.success("Сэдэв устгагдлаа");

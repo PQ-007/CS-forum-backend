@@ -6,7 +6,7 @@ import {
   PlusOutlined,
   RightOutlined,
 } from "@ant-design/icons";
-import { Button, Modal } from "antd";
+import { Button, Modal, message } from "antd";
 import React, { useState } from "react";
 import FormModal from "../Modal";
 import { ContentSection, CourseData, FileItem } from "../types";
@@ -46,8 +46,8 @@ const CourseContent: React.FC<CourseContentProps> = ({
   onDeleteSection,
   isEditable = false,
 }) => {
-  console.log("CourseContent sections:", sections); // Debug log
-  console.log("CourseContent isEditable:", isEditable); // Debug log
+  console.log("CourseContent sections:", sections);
+  console.log("CourseContent isEditable:", isEditable);
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
@@ -57,17 +57,29 @@ const CourseContent: React.FC<CourseContentProps> = ({
     setPreviewFile(file);
   };
 
-  const handleModalSubmit = (values: { title?: string; name?: string }) => {
-    if (editing?.type === "section" && editing.sectionTitle) {
-      onEditSection?.(editing.sectionTitle, values.title || "");
-    } else if (
-      editing?.type === "file" &&
-      editing.sectionTitle !== undefined &&
-      editing.fileIndex !== undefined
-    ) {
-      onEditFile?.(editing.sectionTitle, editing.fileIndex, values.name || "");
+  const handleModalSubmit = async (values: {
+    title?: string;
+    name?: string;
+  }) => {
+    try {
+      if (editing?.type === "section" && editing.sectionTitle) {
+        await onEditSection?.(editing.sectionTitle, values.title || "");
+      } else if (
+        editing?.type === "file" &&
+        editing.sectionTitle !== undefined &&
+        editing.fileIndex !== undefined
+      ) {
+        await onEditFile?.(
+          editing.sectionTitle,
+          editing.fileIndex,
+          values.name || ""
+        );
+      }
+      setEditing(null);
+    } catch (error) {
+      console.error("Error in handleModalSubmit:", error);
+      message.error("Өөрчлөлт хадгалахад алдаа гарлаа");
     }
-    setEditing(null);
   };
 
   const getModalFields = () => {
@@ -116,7 +128,6 @@ const CourseContent: React.FC<CourseContentProps> = ({
       );
     }
 
-    // For other file types, show a download link
     return (
       <div className="text-center p-4">
         <FileOutlined style={{ fontSize: 48 }} />
@@ -262,7 +273,6 @@ const CourseContent: React.FC<CourseContentProps> = ({
                   </div>
                 ))}
 
-                {/* Add File button with animation */}
                 {onAddFile && (
                   <button
                     onClick={() => onAddFile(section.title)}
