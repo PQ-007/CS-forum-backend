@@ -48,6 +48,7 @@ class AuthenticationService {
         ...initialProfileData,
         name,
         email: user.email,
+        photoUrl: user.photoURL,
         type: "student",
         joinedDate: new Date().toISOString(),
       };

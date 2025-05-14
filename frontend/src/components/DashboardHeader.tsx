@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   BellOutlined,
   MailOutlined,
@@ -10,8 +10,10 @@ import { Dropdown, Menu, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import authService from "../service/authService";
+import SearchField from "./SearchField";
 
 const DashboardHeader: React.FC = () => {
+  const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const { user, userData } = useAuth();
   const userName = userData?.displayName || "Guest";
@@ -28,11 +30,16 @@ const DashboardHeader: React.FC = () => {
   };
 
   const handleProfile = () => {
-    navigate(`/dashboard/${userData.type}/profile/${user?.uid}`);
+    navigate(`/dashboard/${userData?.type}/profile/${user?.uid}`);
   };
-  
+
   const handleSettings = () => {
-    navigate(`/dashboard/${userData.type}/settings/${user?.uid}`);
+    navigate(`/dashboard/${userData?.type}/settings/${user?.uid}`);
+  };
+
+  const handleSearch = () => {
+    console.log("Search for:", query);
+    // Add your search logic here
   };
 
   const menu = (
@@ -55,30 +62,48 @@ const DashboardHeader: React.FC = () => {
   );
 
   return (
-    <div className="w-full flex justify-end items-center border-b border-gray-200">
-      <div className="flex items-center gap-4 px-4 py-2 border-r border-gray-200">
-        <MailOutlined style={{ color: "#808897", fontSize: "20px" }} />
-        <BellOutlined style={{ color: "#808897", fontSize: "20px" }} />
+    <div className="w-full flex justify-between items-center border-b border-gray-200">
+      <div className="py-2 px-4">
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          onSearch={handleSearch}
+          placeholder="Search..."
+        />
       </div>
 
-      {/* User Dropdown */}
-      <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
-        <div className="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-gray-100 rounded-md">
-          <img
-            src={user?.photoURL || "/img/pfp.jpg"}
-            alt="User Avatar"
-            className="w-8 h-8 rounded-full object-cover"
-          />
-          <div className="flex flex-col items-start">
-            <div className="text-[#353849] text-sm font-medium flex items-center gap-1">
-              {userName}
-            </div>
-            <div className="text-[#808897] text-xs truncate max-w-[150px]">
-              {userEmail}
+      <div className="flex">
+        <div className="flex items-center gap-4 px-4 py-2 border-r border-gray-200">
+          <MailOutlined style={{ color: "#808897", fontSize: "20px" }} />
+          <BellOutlined style={{ color: "#808897", fontSize: "20px" }} />
+        </div>
+
+        {/* User Dropdown */}
+        <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
+          <div className="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-gray-100 rounded-md">
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt="User Avatar"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white">
+                {userData?.displayName?.charAt(0)}
+              </div>
+            )}
+
+            <div className="flex flex-col items-start">
+              <div className="text-[#353849] text-sm font-medium flex items-center gap-1">
+                {userName}
+              </div>
+              <div className="text-[#808897] text-xs truncate max-w-[150px]">
+                {userEmail}
+              </div>
             </div>
           </div>
-        </div>
-      </Dropdown>
+        </Dropdown>
+      </div>
     </div>
   );
 };
