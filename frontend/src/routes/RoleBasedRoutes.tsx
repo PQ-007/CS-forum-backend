@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
 import StudentProfilePage from "../pages/student/profile";
 import StudentSettingsPage from "../pages/student/settings";
-import { Profile } from "../pages/student/profile/type";
 import { Loading } from "../components/Loading";
 
 // Layouts
@@ -37,7 +36,7 @@ const TeacherAssignmentPage = lazy(() => import("../pages/teacher/assignment"));
 const LoadingFallback = () => <Loading />;
 
 const RoleBasedRoutes: React.FC = () => {
-  const { userData, authorized, loading } = useAuth();
+  const { userData, loading } = useAuth();
 
   // Get the user role - default to student if no role found
   const userRole = userData?.type || "student";

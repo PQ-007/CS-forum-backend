@@ -97,7 +97,7 @@ const CourseCard = React.memo<CourseCardProps>(
         <Card
           className={`rounded-xl shadow-lg overflow-hidden relative ${className}`}
           onClick={onClick}
-          hoverable
+          hoverable={!!actions}
         >
           {/* Gradient Background */}
           <div
@@ -116,7 +116,7 @@ const CourseCard = React.memo<CourseCardProps>(
                 {title}
               </Title>
 
-              {actions?.canEdit && (
+              {actions && (
                 <div className="action-buttons flex gap-2">
                   <Tooltip title="Хичээлийн мэдээлэл засах">
                     <Button
@@ -128,8 +128,11 @@ const CourseCard = React.memo<CourseCardProps>(
                         />
                       }
                       onClick={handleEditClick}
-                      className="hover:!text-white transition-all duration-200 
-                        hover:bg-white/10 active:bg-white/20"
+                      className={
+                        actions
+                          ? "hover:!text-white transition-all duration-200 hover:bg-white/10 active:bg-white/20"
+                          : ""
+                      }
                     />
                   </Tooltip>
                   <Tooltip title="Хичээл устгах">
@@ -142,8 +145,11 @@ const CourseCard = React.memo<CourseCardProps>(
                         />
                       }
                       onClick={handleDeleteClick}
-                      className="hover:!text-red-400 transition-all duration-200 
-                        hover:bg-red-500/10 active:bg-red-500/20"
+                      className={
+                        actions
+                          ? "hover:!text-red-400 transition-all duration-200 hover:bg-red-500/10 active:bg-red-500/20"
+                          : ""
+                      }
                     />
                   </Tooltip>
                 </div>

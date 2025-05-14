@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import type { Dayjs } from "dayjs";
 import { Card, Row, Col, Statistic } from "antd";
 import { UserOutlined, BookOutlined, FileOutlined } from "@ant-design/icons";
 import AssignmentCalendar from "../../../components/Calendar";
@@ -63,14 +62,6 @@ const TeacherAssignmentPage: React.FC<TeacherAssignmentPageProps> = ({
   // Debug: log courses and assignments on every render
   console.log("courses:", courses);
   console.log("assignments:", assignments);
-
-  const events: Record<string, Event[]> = {
-    "2024-05-13": [
-      { type: "success", content: "Хичээл" },
-      { type: "warning", content: "Дасгал" },
-    ],
-    "2024-05-14": [{ type: "error", content: "Шалгалт" }],
-  };
 
   if (section === "sidebar") {
     return (

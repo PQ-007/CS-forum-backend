@@ -13,7 +13,6 @@ import {
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { validateFile } from "../utils/FileHandler";
-import type { Dayjs } from "dayjs";
 
 interface FormModalProps {
   isOpen: boolean;
@@ -132,21 +131,28 @@ const FormModal = forwardRef<FormModalRef, FormModalProps>(
           );
         case "upload":
           return (
-            <Upload
-              beforeUpload={(file) => {
-                if (!validateFile(file, field.validation)) {
-                  return Upload.LIST_IGNORE;
-                }
-                setFileList([{ originFileObj: file }]);
-                return false;
-              }}
-              fileList={fileList}
-              onRemove={() => setFileList([])}
-              maxCount={1}
-              accept={field.validation?.accept}
-            >
-              <Button icon={<UploadOutlined />}>Файл сонгох</Button>
-            </Upload>
+            <>
+              <Upload
+                beforeUpload={(file) => {
+                  if (!validateFile(file, field.validation)) {
+                    return Upload.LIST_IGNORE;
+                  }
+                  setFileList([{ originFileObj: file }]);
+                  return false;
+                }}
+                fileList={fileList}
+                onRemove={() => setFileList([])}
+                maxCount={1}
+                accept={field.validation?.accept}
+              >
+                <Button icon={<UploadOutlined />}>Файл сонгох</Button>
+              </Upload>
+              {field.description && (
+                <div style={{ marginTop: 8, color: "#888", fontSize: 13 }}>
+                  {field.description}
+                </div>
+              )}
+            </>
           );
         default:
           return null;

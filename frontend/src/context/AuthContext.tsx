@@ -3,7 +3,6 @@ import { User, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { UserData } from "./type";
-import profileService from "../service/profileService";
 
 interface AuthContextType {
   user: User | null;

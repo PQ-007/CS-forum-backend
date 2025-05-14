@@ -5,11 +5,13 @@ import {
   FileOutlined,
   PlusOutlined,
   RightOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { Button, Modal, message } from "antd";
 import React, { useState } from "react";
 import FormModal from "../Modal";
 import { ContentSection, CourseData, FileItem } from "../types";
+import { getFileUrl, FileServiceError } from "../../service/fileService";
 
 interface CourseContentProps {
   sections: ContentSection[];
@@ -54,7 +56,41 @@ const CourseContent: React.FC<CourseContentProps> = ({
   const [editing, setEditing] = useState<EditingState | null>(null);
 
   const handleFileClick = (file: FileItem) => {
-    setPreviewFile(file);
+    try {
+      // Try to get the file URL first to catch any errors
+      getFileUrl(file.storagePath || file.url);
+      setPreviewFile(file);
+    } catch (error) {
+      const fileError = error as FileServiceError;
+      let errorMessage = "Файл нээхэд алдаа гарлаа";
+
+      switch (fileError.type) {
+        case "BLOCKED":
+          errorMessage =
+            "Сервертэй холбогдоход алдаа гарлаа. Сүлжээний тохиргоо, эсвэл халдлагаас хамгаалах системийг шалгана уу.";
+          break;
+        case "CORS":
+          errorMessage =
+            "Серверийн зөвшөөрөл хүрэлцэхгүй байна. Системийн администратортой холбоо барина уу.";
+          break;
+        case "NETWORK":
+          errorMessage = "Холболт удаан байна. Дараа дахин оролдоно уу.";
+          break;
+        case "SERVER":
+          errorMessage = "Серверийн алдаа гарлаа. Дараа дахин оролдоно уу.";
+          break;
+        case "VALIDATION":
+          errorMessage = "Файлын мэдээлэл буруу байна.";
+          break;
+      }
+
+      Modal.error({
+        title: "Алдаа гарлаа",
+        icon: <ExclamationCircleOutlined />,
+        content: errorMessage,
+        okText: "Ойлголоо",
+      });
+    }
   };
 
   const handleModalSubmit = async (values: {
@@ -103,46 +139,155 @@ const CourseContent: React.FC<CourseContentProps> = ({
     ];
   };
 
-  const renderFilePreview = (file: FileItem) => {
-    if (file.type?.startsWith("image/")) {
+  const getFileIcon = (fileType?: string, file?: FileItem) => {
+    if (fileType?.startsWith("image/") && file) {
       return (
         <img
-          src={file.url}
+          src={getFileUrl(file.storagePath || file.url)}
           alt={file.name}
-          style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain" }}
+          style={{ maxWidth: "100%", maxHeight: "40vh", objectFit: "contain" }}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.src = "";
+            Modal.error({
+              title: "Зураг ачаалахад алдаа гарлаа",
+              content: "Зураг нээхэд алдаа гарлаа. Дараа дахин оролдоно уу.",
+              okText: "Ойлголоо",
+            });
+          }}
         />
       );
     }
 
-    if (file.type === "application/pdf") {
+    // Default icons for different file types
+    switch (fileType) {
+      case "application/pdf":
+        return <FileOutlined style={{ fontSize: 64, color: "#ff4d4f" }} />;
+      case "application/msword":
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return <FileOutlined style={{ fontSize: 64, color: "#1890ff" }} />;
+      case "application/vnd.ms-powerpoint":
+      case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+        return <FileOutlined style={{ fontSize: 64, color: "#fa8c16" }} />;
+      case "application/vnd.ms-excel":
+      case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        return <FileOutlined style={{ fontSize: 64, color: "#52c41a" }} />;
+      default:
+        return <FileOutlined style={{ fontSize: 64, color: "#1890ff" }} />;
+    }
+  };
+
+  const getFileTypeName = (fileType?: string) => {
+    switch (fileType) {
+      case "application/pdf":
+        return "PDF файл";
+      case "application/msword":
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return "Word файл";
+      case "application/vnd.ms-powerpoint":
+      case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+        return "PowerPoint файл";
+      case "application/vnd.ms-excel":
+      case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        return "Excel файл";
+      case "image/png":
+      case "image/jpeg":
+        return "Зураг";
+      default:
+        return "Файл";
+    }
+  };
+
+  const renderFilePreview = (file: FileItem) => {
+    try {
+      const fileUrl = getFileUrl(file.storagePath || file.url);
+      const fileTypeName = getFileTypeName(file.type);
+      const isImage = file.type?.startsWith("image/");
+
       return (
-        <div style={{ height: "80vh" }}>
-          <iframe
-            src={file.url}
-            title={file.name}
-            width="100%"
-            height="100%"
-            style={{ border: "none" }}
+        <div className="text-center p-8">
+          {getFileIcon(file.type, file)}
+          <p className="mt-4 text-lg text-gray-700">{file.name}</p>
+          <p className="mt-2 text-sm text-gray-500">
+            {isImage
+              ? "Зургийг харах бол доорх товчлуур дээр дараарай"
+              : `${fileTypeName}-ийг шинэ цонхонд нээх бол доорх товчлуур дээр дараарай`}
+          </p>
+          <div className="mt-6 space-y-3">
+            {!isImage && (
+              <a
+                href={fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                onClick={(e) => {
+                  try {
+                    // The click will proceed normally
+                  } catch (error) {
+                    e.preventDefault();
+                    const fileError = error as FileServiceError;
+                    Modal.error({
+                      title: `${fileTypeName} нээхэд алдаа гарлаа`,
+                      content:
+                        fileError.message ||
+                        `${fileTypeName} нээхэд алдаа гарлаа. Дараа дахин оролдоно уу.`,
+                      okText: "Ойлголоо",
+                    });
+                  }
+                }}
+              >
+                {fileTypeName} нээх
+              </a>
+            )}
+            <br />
+            <a
+              href={fileUrl}
+              download={file.name}
+              className={`inline-block px-6 py-2 border border-blue-500 text-blue-500 rounded hover:bg-blue-50 transition-colors ${
+                !isImage ? "mt-2" : ""
+              }`}
+              onClick={(e) => {
+                try {
+                  // The click will proceed normally
+                } catch (error) {
+                  e.preventDefault();
+                  const fileError = error as FileServiceError;
+                  Modal.error({
+                    title: `${fileTypeName} татахад алдаа гарлаа`,
+                    content:
+                      fileError.message ||
+                      `${fileTypeName} татахад алдаа гарлаа. Дараа дахин оролдоно уу.`,
+                    okText: "Ойлголоо",
+                  });
+                }
+              }}
+            >
+              {fileTypeName} татах
+            </a>
+          </div>
+        </div>
+      );
+    } catch (error) {
+      const fileError = error as FileServiceError;
+      return (
+        <div className="text-center p-4">
+          <ExclamationCircleOutlined
+            style={{ fontSize: 48, color: "#ff4d4f" }}
           />
+          <p className="mt-2 text-red-500">
+            {fileError.message || "Файл нээхэд алдаа гарлаа"}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            {fileError.type === "BLOCKED" &&
+              "Сүлжээний тохиргоо, эсвэл халдлагаас хамгаалах системийг шалгана уу."}
+            {fileError.type === "CORS" &&
+              "Системийн администратортой холбоо барина уу."}
+            {fileError.type === "NETWORK" && "Дараа дахин оролдоно уу."}
+          </p>
         </div>
       );
     }
-
-    return (
-      <div className="text-center p-4">
-        <FileOutlined style={{ fontSize: 48 }} />
-        <p className="mt-2">{file.name}</p>
-        <a
-          href={file.url}
-          download={file.name}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 hover:text-blue-700 mt-4 inline-block px-4 py-2 border border-blue-500 rounded hover:bg-blue-50 transition-colors"
-        >
-          Татах
-        </a>
-      </div>
-    );
   };
 
   const renderFileItem = (

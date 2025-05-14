@@ -14,14 +14,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireAuth = true,
   roleRequired = undefined,
 }) => {
-  const { user, loading, authorized, userData } = useAuth();
+  const { loading, authorized, userData } = useAuth();
   const location = useLocation();
   const userRole = userData?.type || "student"; // Default to student if no role found
 
   if (loading) {
-    return (
-      <Loading/>
-    );
+    return <Loading />;
   }
 
   if (requireAuth) {

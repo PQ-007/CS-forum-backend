@@ -28,11 +28,11 @@ const DashboardHeader: React.FC = () => {
   };
 
   const handleProfile = () => {
-    navigate(`/dashboard/${userData.type}/profile/${user?.uid}`);
+    navigate(`/dashboard/${userData?.type || "student"}/profile/${user?.uid}`);
   };
-  
+
   const handleSettings = () => {
-    navigate(`/dashboard/${userData.type}/settings/${user?.uid}`);
+    navigate(`/dashboard/${userData?.type || "student"}/settings/${user?.uid}`);
   };
 
   const menu = (

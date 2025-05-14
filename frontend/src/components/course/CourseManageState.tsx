@@ -369,8 +369,8 @@ export const useCourseManager = (initialCourses: CourseData[] = []) => {
               {
                 name: values.name || values.file.name,
                 url: fileData.url,
-                type: fileData.type,
-                uploadedAt: new Date(fileData.uploadedAt),
+                type: fileData.fileType.category,
+                uploadedAt: new Date(),
                 storagePath: fileData.storagePath,
               },
             ],

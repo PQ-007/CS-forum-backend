@@ -1,4 +1,4 @@
-import axios, { AxiosProgressEvent } from "axios";
+import axios, { AxiosProgressEvent, AxiosError } from "axios";
 
 const API_URL = "http://163.43.128.5:3000";
 
@@ -12,6 +12,7 @@ export interface FileUploadResponse {
 
 export interface FileError extends Error {
   code?: string;
+  type?: "BLOCKED" | "CORS" | "NETWORK" | "SERVER" | "VALIDATION" | "UNKNOWN";
   response?: {
     data: {
       error: string;
@@ -19,6 +20,252 @@ export interface FileError extends Error {
     };
   };
 }
+
+// Custom error class for file service errors
+export class FileServiceError extends Error implements FileError {
+  type: FileError["type"];
+  code?: string;
+  response?: FileError["response"];
+
+  constructor(
+    message: string,
+    type: FileError["type"] = "UNKNOWN",
+    code?: string,
+    response?: FileError["response"]
+  ) {
+    super(message);
+    this.name = "FileServiceError";
+    this.type = type;
+    this.code = code;
+    this.response = response;
+  }
+}
+
+// Helper function to create appropriate error
+const createFileError = (error: unknown): FileServiceError => {
+  if (error instanceof FileServiceError) {
+    return error;
+  }
+
+  if (axios.isAxiosError(error)) {
+    const axiosError = error as AxiosError<{ error: string; details?: string }>;
+
+    // Handle CORS and blocked connection errors
+    if (
+      axiosError.code === "ERR_NETWORK" ||
+      axiosError.message.includes("blocked")
+    ) {
+      return new FileServiceError(
+        "Сервертэй холбогдоход алдаа гарлаа. Сүлжээний тохиргоо, эсвэл халдлагаас хамгаалах системийг шалгана уу.",
+        "BLOCKED",
+        axiosError.code
+      );
+    }
+
+    // Handle CORS errors
+    if (axiosError.message.includes("CORS") || axiosError.code === "ERR_CORS") {
+      return new FileServiceError(
+        "Серверийн зөвшөөрөл хүрэлцэхгүй байна. Системийн администратортой холбоо барина уу.",
+        "CORS",
+        axiosError.code
+      );
+    }
+
+    // Handle server errors
+    if (axiosError.response?.data) {
+      return new FileServiceError(
+        axiosError.response.data.error || "Серверийн алдаа гарлаа",
+        "SERVER",
+        axiosError.code,
+        { data: axiosError.response.data }
+      );
+    }
+
+    // Handle network errors
+    if (
+      axiosError.code === "ECONNABORTED" ||
+      axiosError.message.includes("timeout")
+    ) {
+      return new FileServiceError(
+        "Холболт удаан байна. Дараа дахин оролдоно уу.",
+        "NETWORK",
+        axiosError.code
+      );
+    }
+  }
+
+  // Handle validation errors
+  if (error instanceof Error && error.message.includes("validation")) {
+    return new FileServiceError(error.message, "VALIDATION");
+  }
+
+  // Handle unknown errors
+  return new FileServiceError(
+    error instanceof Error ? error.message : "Тодорхойгүй алдаа гарлаа",
+    "UNKNOWN"
+  );
+};
+
+// File type categories
+export type FileCategory =
+  | "document" // PDF, Word, etc.
+  | "spreadsheet" // Excel
+  | "presentation" // PowerPoint
+  | "image" // Images
+  | "code" // Programming files
+  | "other"; // Other files
+
+// File type information interface
+export interface FileTypeInfo {
+  category: FileCategory;
+  displayName: string;
+  iconColor: string;
+  allowedExtensions: string[];
+  mimeTypes: string[];
+}
+
+// Export the file types constant
+export const FILE_TYPES: Record<string, FileTypeInfo> = {
+  // Documents
+  pdf: {
+    category: "document",
+    displayName: "PDF файл",
+    iconColor: "#ff4d4f",
+    allowedExtensions: [".pdf"],
+    mimeTypes: ["application/pdf"],
+  },
+  word: {
+    category: "document",
+    displayName: "Word файл",
+    iconColor: "#1890ff",
+    allowedExtensions: [".doc", ".docx"],
+    mimeTypes: [
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ],
+  },
+  // Spreadsheets
+  excel: {
+    category: "spreadsheet",
+    displayName: "Excel файл",
+    iconColor: "#52c41a",
+    allowedExtensions: [".xls", ".xlsx"],
+    mimeTypes: [
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ],
+  },
+  // Presentations
+  powerpoint: {
+    category: "presentation",
+    displayName: "PowerPoint файл",
+    iconColor: "#fa8c16",
+    allowedExtensions: [".ppt", ".pptx"],
+    mimeTypes: [
+      "application/vnd.ms-powerpoint",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ],
+  },
+  // Images
+  image: {
+    category: "image",
+    displayName: "Зураг",
+    iconColor: "#722ed1",
+    allowedExtensions: [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"],
+    mimeTypes: [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/bmp",
+      "image/webp",
+    ],
+  },
+  // Code files
+  javascript: {
+    category: "code",
+    displayName: "JavaScript файл",
+    iconColor: "#fadb14",
+    allowedExtensions: [".js", ".jsx", ".ts", ".tsx"],
+    mimeTypes: ["text/javascript", "application/javascript", "text/typescript"],
+  },
+  python: {
+    category: "code",
+    displayName: "Python файл",
+    iconColor: "#13c2c2",
+    allowedExtensions: [".py", ".pyw"],
+    mimeTypes: ["text/x-python", "text/python"],
+  },
+  java: {
+    category: "code",
+    displayName: "Java файл",
+    iconColor: "#eb2f96",
+    allowedExtensions: [".java"],
+    mimeTypes: ["text/x-java-source", "text/java"],
+  },
+  cpp: {
+    category: "code",
+    displayName: "C++ файл",
+    iconColor: "#fa541c",
+    allowedExtensions: [".cpp", ".cc", ".cxx", ".hpp", ".h"],
+    mimeTypes: ["text/x-c++src", "text/x-c++hdr"],
+  },
+  csharp: {
+    category: "code",
+    displayName: "C# файл",
+    iconColor: "#a0d911",
+    allowedExtensions: [".cs"],
+    mimeTypes: ["text/x-csharp"],
+  },
+  html: {
+    category: "code",
+    displayName: "HTML файл",
+    iconColor: "#faad14",
+    allowedExtensions: [".html", ".htm"],
+    mimeTypes: ["text/html"],
+  },
+  css: {
+    category: "code",
+    displayName: "CSS файл",
+    iconColor: "#2f54eb",
+    allowedExtensions: [".css"],
+    mimeTypes: ["text/css"],
+  },
+  sql: {
+    category: "code",
+    displayName: "SQL файл",
+    iconColor: "#1890ff",
+    allowedExtensions: [".sql"],
+    mimeTypes: ["text/x-sql"],
+  },
+  // Other files
+  other: {
+    category: "other",
+    displayName: "Файл",
+    iconColor: "#1890ff",
+    allowedExtensions: [],
+    mimeTypes: [],
+  },
+} as const;
+
+// Helper function to get file type info
+export const getFileTypeInfo = (
+  file: File | { name: string; type?: string }
+): FileTypeInfo => {
+  const extension = file.name.toLowerCase().split(".").pop() || "";
+  const mimeType = file.type?.toLowerCase() || "";
+
+  // Find matching file type
+  for (const typeInfo of Object.values(FILE_TYPES)) {
+    if (
+      typeInfo.allowedExtensions.includes(`.${extension}`) ||
+      typeInfo.mimeTypes.includes(mimeType)
+    ) {
+      return typeInfo;
+    }
+  }
+
+  return FILE_TYPES.other;
+};
 
 /**
  * Uploads a file to the server
@@ -31,13 +278,9 @@ export const uploadFile = async (
   file: File,
   courseId: string,
   sectionTitle: string
-): Promise<FileUploadResponse> => {
+): Promise<{ url: string; storagePath: string; fileType: FileTypeInfo }> => {
   try {
-    // Validate file before upload
-    const validation = validateFile(file);
-    if (!validation.isValid) {
-      throw new Error(validation.error);
-    }
+    validateFile(file);
 
     // Create FormData and append all required fields
     const formData = new FormData();
@@ -101,16 +344,14 @@ export const uploadFile = async (
     // Log the response
     console.log("Upload response:", response.data);
 
-    return response.data;
+    return {
+      url: response.data.url,
+      storagePath: response.data.storagePath,
+      fileType: getFileTypeInfo(file),
+    };
   } catch (error) {
     console.error("File upload error:", error);
-    const fileError = error as FileError;
-    throw new Error(
-      fileError.response?.data?.error ||
-        fileError.response?.data?.details ||
-        fileError.message ||
-        "Failed to upload file"
-    );
+    throw createFileError(error);
   }
 };
 
@@ -122,7 +363,7 @@ export const uploadFile = async (
 export const deleteFile = async (storagePath: string): Promise<void> => {
   try {
     if (!storagePath.startsWith("courses/")) {
-      throw new Error("Invalid storage path");
+      throw new FileServiceError("Invalid storage path", "VALIDATION");
     }
 
     console.log("Deleting file:", { storagePath });
@@ -137,12 +378,7 @@ export const deleteFile = async (storagePath: string): Promise<void> => {
     console.log("File deleted successfully:", storagePath);
   } catch (error) {
     console.error("File deletion error:", error);
-    const fileError = error as FileError;
-    throw new Error(
-      fileError.response?.data?.error ||
-        fileError.message ||
-        "Failed to delete file"
-    );
+    throw createFileError(error);
   }
 };
 
@@ -152,17 +388,27 @@ export const deleteFile = async (storagePath: string): Promise<void> => {
  * @returns The full URL to access the file
  */
 export const getFileUrl = (storagePath: string): string => {
-  if (!storagePath) {
-    throw new Error("Storage path is required");
-  }
+  try {
+    if (!storagePath) {
+      throw new FileServiceError("Storage path is required", "VALIDATION");
+    }
 
-  // If it's already a full URL, return it
-  if (storagePath.startsWith("http")) {
-    return storagePath;
-  }
+    // If it's already a full URL, return it
+    if (storagePath.startsWith("http")) {
+      return storagePath;
+    }
 
-  // Otherwise, construct the URL
-  return `${API_URL}/uploads/${storagePath}`;
+    // If it starts with /uploads, it's a relative path from the server
+    if (storagePath.startsWith("/uploads")) {
+      return `${API_URL}${storagePath}`;
+    }
+
+    // Otherwise, construct the URL using the storage path
+    return `${API_URL}/uploads/${storagePath}`;
+  } catch (error) {
+    console.error("Error getting file URL:", error);
+    throw createFileError(error);
+  }
 };
 
 /**
@@ -171,10 +417,25 @@ export const getFileUrl = (storagePath: string): string => {
  */
 export const checkFileServerHealth = async (): Promise<boolean> => {
   try {
-    const response = await axios.get(`${API_URL}/health`);
+    const response = await axios.get(`${API_URL}/health`, {
+      timeout: 5000, // 5 second timeout
+      headers: {
+        Accept: "application/json",
+      },
+    });
     return response.data.status === "healthy";
   } catch (error) {
     console.error("Health check failed:", error);
+    const fileError = createFileError(error);
+
+    // Log specific error details for debugging
+    console.error("Health check error details:", {
+      type: fileError.type,
+      code: fileError.code,
+      message: fileError.message,
+      response: fileError.response,
+    });
+
     return false;
   }
 };
@@ -184,35 +445,22 @@ export const checkFileServerHealth = async (): Promise<boolean> => {
  * @param file The file to validate
  * @returns Object containing validation result and any error message
  */
-export const validateFile = (
-  file: File
-): { isValid: boolean; error?: string } => {
-  const maxSize = 10 * 1024 * 1024; // 10MB
-  const allowedTypes = [
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.ms-powerpoint",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "image/png",
-    "image/jpeg",
-  ];
+export const validateFile = (file: File): void => {
+  const fileTypeInfo = getFileTypeInfo(file);
 
-  if (file.size > maxSize) {
-    return {
-      isValid: false,
-      error: "File size exceeds 10MB limit",
-    };
+  // Check file size (10MB limit)
+  if (file.size > 10 * 1024 * 1024) {
+    throw new FileServiceError(
+      "Файлын хэмжээ хэт их байна. 10MB-ээс бага файл оруулна уу.",
+      "VALIDATION"
+    );
   }
 
-  if (!allowedTypes.includes(file.type)) {
-    return {
-      isValid: false,
-      error: "File type not allowed",
-    };
+  // Check if file type is allowed
+  if (fileTypeInfo.category === "other") {
+    throw new FileServiceError(
+      "Энэ төрлийн файл зөвшөөрөгдөөгүй байна. Зөвшөөрөгдсөн файлын төрлүүд: PDF, Word, PowerPoint, Excel, зураг, код файл (JS, Python, Java, C++, C#, HTML, CSS, SQL).",
+      "VALIDATION"
+    );
   }
-
-  return { isValid: true };
 };
