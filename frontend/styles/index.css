@@ -4,3 +4,13 @@
   --font-sans: var(--font-general-sans);
   --font-general-sans: "General Sans", sans-serif;
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

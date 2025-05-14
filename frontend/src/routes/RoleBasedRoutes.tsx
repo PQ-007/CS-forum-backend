@@ -23,20 +23,18 @@ const DashboardContent = lazy(
 // Student Pages
 const StudentHomePage = lazy(() => import("../pages/student/home"));
 const StudentCoursePage = lazy(() => import("../pages/student/course"));
-
-
+const StudentAssignmentPage = lazy(() => import("../pages/student/assignment"));
 // Teacher Pages - Uncomment when implementing
 // const TeacherHomePage = lazy(() => import("../pages/teacher/home"));
 const TeacherCoursePage = lazy(() => import("../pages/teacher/course"));
+const TeacherAssignmentPage = lazy(() => import("../pages/teacher/assignment"));
 
 // Admin Pages - Uncomment when implementing
 // const AdminHomePage = lazy(() => import("../pages/admin/home"));
 // const AdminDashboardPage = lazy(() => import("../pages/admin/dashboard"));
 
 // Loading component for Suspense fallback
-const LoadingFallback = () => (
-  <Loading/>
-);
+const LoadingFallback = () => <Loading />;
 
 const RoleBasedRoutes: React.FC = () => {
   const { userData, authorized, loading } = useAuth();
@@ -115,16 +113,20 @@ const RoleBasedRoutes: React.FC = () => {
             }
           />
           <Route
+            path="assignment"
+            element={
+              <DashboardContent
+                mainContent={<StudentAssignmentPage section="main" />}
+              />
+            }
+          />
+          <Route
             path={`profile/:uid`}
             element={<DashboardContent mainContent={<StudentProfilePage />} />}
           />
           <Route
             path={`settings/:uid`}
-            element={
-              <DashboardContent
-                mainContent={<StudentSettingsPage />}
-              />
-            }
+            element={<DashboardContent mainContent={<StudentSettingsPage />} />}
           />
         </Route>
 
@@ -158,6 +160,14 @@ const RoleBasedRoutes: React.FC = () => {
               <DashboardContent
                 mainContent={<TeacherCoursePage section="main" />}
                 sidebarContent={<TeacherCoursePage section="sidebar" />}
+              />
+            }
+          />
+          <Route
+            path="assignment"
+            element={
+              <DashboardContent
+                mainContent={<TeacherAssignmentPage section="main" />}
               />
             }
           />

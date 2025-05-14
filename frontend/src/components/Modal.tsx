@@ -1,135 +1,191 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
-import { Modal, Form, Input, InputNumber, Upload } from "antd";
+import React, { useState, forwardRef, useImperativeHandle } from "react";
+import {
+  Modal as AntModal,
+  Form,
+  Input,
+  Button,
+  Upload,
+  message,
+  Select,
+  DatePicker,
+  InputNumber,
+} from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import type { UploadFile } from "antd/es/upload/interface";
-import { handleFileUpload, validateFile } from "../../utils/FileHandler";
-import { ModalFormValues } from './types';
+import { validateFile } from "../utils/FileHandler";
+import type { Dayjs } from "dayjs";
 
-interface FileValidationProps {
-  maxSize?: number;
-  allowedTypes?: string[];
-  accept?: string;
-}
-
-export interface FieldType {
-  name: string;
-  label: string;
-  type: "text" | "textarea" | "number" | "upload";
-  rules?: any[];
-  props?: Record<string, any>;
-  validation?: FileValidationProps;
-}
-
-export interface FormModalProps {
-  title: string;
+interface FormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (values: ModalFormValues) => void | Promise<void>;
-  fields: FieldType[];
-  initialValues?: Partial<ModalFormValues>;
+  onSubmit: (values: any) => void;
+  title: string;
+  fields: any[];
+  initialValues?: any;
 }
 
-const FormModal: React.FC<FormModalProps> = ({
-  title,
-  isOpen,
-  onClose,
-  onSubmit,
-  fields,
-  initialValues,
-}) => {
-  const [form] = Form.useForm();
-  const [fileList, setFileList] = React.useState<UploadFile[]>([]);
+export interface FormModalRef {
+  form: ReturnType<typeof Form.useForm>[0];
+}
 
-  React.useEffect(() => {
-    if (isOpen && initialValues) {
-      form.setFieldsValue(initialValues);
-    }
-  }, [isOpen, initialValues, form]);
+const FormModal = forwardRef<FormModalRef, FormModalProps>(
+  ({ isOpen, onClose, onSubmit, title, fields, initialValues = {} }, ref) => {
+    const [form] = Form.useForm();
+    const [fileList, setFileList] = useState<any[]>([]);
 
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      // If there's a file field, get the file from fileList
-      const fileField = fields.find((f) => f.type === "upload");
-      if (fileField && fileList[0]) {
-        values[fileField.name] = fileList[0].originFileObj;
-      }
-      onSubmit(values);
-      form.resetFields();
-      setFileList([]);
-    } catch (error) {
-      console.error("Validation failed:", error);
-    }
-  };
+    // Expose form instance to parent
+    useImperativeHandle(ref, () => ({
+      form,
+    }));
 
-  const renderField = (field: FieldType) => {
-    switch (field.type) {
-      case "textarea":
-        return <Input.TextArea rows={4} {...field.props} />;
-      case "number":
-        return <InputNumber style={{ width: "100%" }} {...field.props} />;
-      case "upload":
-        return (
-          <Upload
-            fileList={fileList}
-            onChange={({ fileList }) => setFileList(fileList)}
-            beforeUpload={(file) => {
-              const isValid = validateFile(file, {
-                maxSize: field.validation?.maxSize,
-                allowedTypes: field.validation?.allowedTypes,
-              });
-              if (isValid) {
-                handleFileUpload(file).then((fileData) => {
-                  if (fileData) {
-                    form.setFieldValue(field.name, fileData);
-                  }
-                });
-              }
-              return false;
-            }}
-            maxCount={1}
-            accept={field.validation?.accept}
-            {...field.props}
-          >
-            <div className="p-4 border-2 border-dashed border-gray-300 rounded-md text-center">
-              <UploadOutlined className="text-2xl mb-2" />
-              <div>Файл сонгох эсвэл чирэх</div>
-            </div>
-          </Upload>
-        );
-      default:
-        return <Input {...field.props} />;
-    }
-  };
-
-  return (
-    <Modal
-      title={title}
-      open={isOpen}
-      onOk={handleSubmit}
-      onCancel={() => {
-        onClose();
+    // Reset form and fileList when modal opens/closes
+    React.useEffect(() => {
+      if (isOpen) {
+        form.setFieldsValue(initialValues);
+      } else {
         form.resetFields();
         setFileList([]);
-      }}
-      okText="Нэмэх"
-      cancelText="Болих"
-    >
-      <Form form={form} layout="vertical" initialValues={initialValues}>
-        {fields.map((field) => (
-          <Form.Item
-            key={field.name}
-            name={field.name}
-            label={field.label}
-            rules={field.rules}
-          >
-            {renderField(field)}
-          </Form.Item>
-        ))}
-      </Form>
-    </Modal>
-  );
-};
+      }
+    }, [isOpen, initialValues, form]);
+
+    const handleSubmit = async () => {
+      try {
+        const values = await form.validateFields();
+
+        // Log the form values and fileList for debugging
+        console.log("Form values before submit:", values);
+        console.log("FileList before submit:", fileList);
+
+        // Check if this is a file upload form
+        const hasFileField = fields.some((field) => field.type === "upload");
+
+        if (hasFileField) {
+          if (fileList.length === 0) {
+            message.error("Файл сонгогдоогүй байна");
+            return;
+          }
+          // Ensure we're using the actual file object
+          const file = fileList[0].originFileObj;
+          if (!file) {
+            message.error("Файл сонгогдоогүй байна");
+            return;
+          }
+          values.file = file;
+        }
+
+        // Log the final values being submitted
+        console.log("Submitting values:", values);
+
+        onSubmit(values);
+        form.resetFields();
+        setFileList([]);
+        onClose();
+      } catch (error) {
+        console.error("Form validation failed:", error);
+      }
+    };
+
+    const renderField = (field: any) => {
+      switch (field.type) {
+        case "text":
+          return (
+            <Input
+              placeholder={field.placeholder}
+              maxLength={field.maxLength}
+              showCount={field.showCount}
+            />
+          );
+        case "number":
+          return (
+            <InputNumber
+              placeholder={field.placeholder}
+              min={field.min}
+              max={field.max}
+              style={{ width: "100%" }}
+            />
+          );
+        case "textarea":
+          return (
+            <Input.TextArea
+              placeholder={field.placeholder}
+              maxLength={field.maxLength}
+              showCount={field.showCount}
+              rows={field.rows || 4}
+            />
+          );
+        case "select":
+          return (
+            <Select
+              placeholder={field.placeholder}
+              options={field.options}
+              disabled={field.disabled}
+              onChange={field.onChange}
+            />
+          );
+        case "date":
+          return (
+            <DatePicker
+              placeholder={field.placeholder}
+              format="YYYY-MM-DD"
+              style={{ width: "100%" }}
+            />
+          );
+        case "upload":
+          return (
+            <Upload
+              beforeUpload={(file) => {
+                if (!validateFile(file, field.validation)) {
+                  return Upload.LIST_IGNORE;
+                }
+                setFileList([{ originFileObj: file }]);
+                return false;
+              }}
+              fileList={fileList}
+              onRemove={() => setFileList([])}
+              maxCount={1}
+              accept={field.validation?.accept}
+            >
+              <Button icon={<UploadOutlined />}>Файл сонгох</Button>
+            </Upload>
+          );
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <AntModal
+        title={title}
+        open={isOpen}
+        onCancel={() => {
+          form.resetFields();
+          setFileList([]);
+          onClose();
+        }}
+        footer={[
+          <Button key="cancel" onClick={onClose}>
+            Болих
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleSubmit}>
+            Хадгалах
+          </Button>,
+        ]}
+      >
+        <Form form={form} layout="vertical" initialValues={initialValues}>
+          {fields.map((field) => (
+            <Form.Item
+              key={field.name}
+              name={field.name}
+              label={field.label}
+              rules={field.rules}
+            >
+              {renderField(field)}
+            </Form.Item>
+          ))}
+        </Form>
+      </AntModal>
+    );
+  }
+);
 
 export default FormModal;
