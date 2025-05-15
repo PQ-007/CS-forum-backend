@@ -4,8 +4,10 @@ import { useAuth } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
 import StudentProfilePage from "../pages/student/profile";
 import StudentSettingsPage from "../pages/student/settings";
-import { Profile } from "../pages/student/profile/type";
 import { Loading } from "../components/Loading";
+import StudentArticlePage from "../pages/student/article";
+import StudentArticleByIdPage from "../pages/student/article/articleByID";
+
 
 // Layouts
 const AuthLayout = lazy(() => import("../layouts/login_page"));
@@ -120,6 +122,26 @@ const RoleBasedRoutes: React.FC = () => {
               />
             }
           />
+           <Route
+            path="article"
+            element={<DashboardContent mainContent={<StudentArticlePage/>} />}
+          />
+          <Route
+            path="question"
+            element={<DashboardContent mainContent={<p>question page</p>} />}
+          />
+          <Route
+            path={`article/:uid`}
+            element={<DashboardContent mainContent={<StudentArticleByIdPage/>} />}
+          />
+           <Route
+            path="projects"
+            element={<DashboardContent mainContent={<p>projects page</p>} />}
+          />
+          <Route
+            path={`projects/:uid`}
+            element={<DashboardContent mainContent={<div> selected projects page</div>} />}
+          />
           <Route
             path={`profile/:uid`}
             element={<DashboardContent mainContent={<StudentProfilePage />} />}
@@ -127,6 +149,12 @@ const RoleBasedRoutes: React.FC = () => {
           <Route
             path={`settings/:uid`}
             element={<DashboardContent mainContent={<StudentSettingsPage />} />}
+          />
+          <Route
+            path={`announcements`}
+            element={<DashboardContent mainContent={<p>
+              Medeelel Go
+            </p>} />}
           />
         </Route>
 
@@ -206,6 +234,18 @@ const RoleBasedRoutes: React.FC = () => {
               />
             }
           />
+          <Route
+            path="users-list"
+            element={
+              <DashboardContent
+                mainContent={
+                  <div>Userslist page (Create this component)</div>
+                }
+                sidebarContent={<div>Admin Dashboard Sidebar</div>}
+              />
+            }
+          />
+
         </Route>
 
         {/* Catch-all Route */}

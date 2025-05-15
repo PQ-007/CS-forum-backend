@@ -6,7 +6,7 @@ import {
   User,
 } from "firebase/auth";
 import { auth, provider, db } from "../firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { initialProfileData } from "./initialDatas";
 import { Profile } from "../pages/student/profile/type";
 import { FirebaseError } from "firebase/app";
@@ -43,17 +43,20 @@ class AuthenticationService {
         createdAt: new Date(),
       });
 
-      // Create initial profile data
-      const userProfile: Profile = {
-        ...initialProfileData,
-        name,
-        email: user.email,
-        photoUrl: user.photoURL,
-        type: "student",
-        joinedDate: new Date().toISOString(),
-      };
+      // Set initial profile data if not exists
+      const docSnap = await getDoc(profileRef);
+      if (!docSnap.exists()) {
+        const userProfile: Profile = {
+          ...initialProfileData,
+          name,
+          email: user.email,
+          photoUrl: user.photoURL,
+          type: "student",
+          joinedDate: new Date().toISOString(),
+        };
 
-      await setDoc(profileRef, userProfile);
+        await setDoc(profileRef, userProfile);
+      }
     } catch (error: any) {
       console.error("Error saving user data to Firestore:", error.message);
       throw error;

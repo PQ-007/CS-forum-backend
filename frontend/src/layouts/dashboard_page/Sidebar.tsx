@@ -46,12 +46,7 @@ const SideBar = () => {
           <span className="text-[20px] text-white font-medium">Sakura</span>
         </div>
 
-        {/* Role Indicator */}
-        <div className="px-4 py-2 bg-[#15151E] mb-2">
-          <span className="text-[14px] text-gray-400">
-            Role: <span className="text-white capitalize">{userRole}</span>
-          </span>
-        </div>
+   
 
         {/* Menu Section */}
         <Menu

@@ -94,8 +94,32 @@ const DashboardHeader: React.FC = () => {
             )}
 
             <div className="flex flex-col items-start">
-              <div className="text-[#353849] text-sm font-medium flex items-center gap-1">
-                {userName}
+              <div className="flex items-center">
+                <div className="text-[#353849] text-sm font-medium flex items-center gap-1">
+                  {userName}
+                </div>{" "}
+                {/* Role Badge */}
+                <div
+                  className={`px-3 py-1 rounded-full w-fit text-white  text-xs font-medium ml-2 ${
+                    userData?.type === "admin"
+                      ? "bg-red-600"
+                      : userData?.type === "teacher"
+                      ? "bg-purple-500"
+                      : userData?.type === "student"
+                      ? "bg-blue-400"
+                      : "bg-gray-600"
+                  }`}
+                >
+                  <span className="capitalize">
+                    {userData?.type === "admin"
+                      ? "Админ"
+                      : userData?.type === "teacher"
+                      ? "Багш"
+                      : userData?.type === "student"
+                      ? "Оюутан"
+                      : "Зочин"}
+                  </span>
+                </div>
               </div>
               <div className="text-[#808897] text-xs truncate max-w-[150px]">
                 {userEmail}

@@ -6,7 +6,11 @@ import {
   FormOutlined,
   NotificationOutlined,
   CalendarOutlined,
+
+  BuildOutlined,
 } from "@ant-design/icons";
+import { BsQuestionCircle } from "react-icons/bs";
+
 
 // Student Menu Items
 export const StudentMenuItems = [
@@ -28,7 +32,17 @@ export const StudentMenuItems = [
   {
     icon: <FormOutlined />,
     label: "Нийтлэл",
-    path: "/dashboard/student/posts",
+    path: "/dashboard/student/article",
+  },
+    {
+    icon: <BsQuestionCircle/>,
+    label: "Асуулт",
+    path: "/dashboard/student/question",
+  },
+  {
+    icon: <BuildOutlined />,
+    label: "Төсөл",
+    path: "/dashboard/student/projects",
   },
   {
     icon: <NotificationOutlined />,
