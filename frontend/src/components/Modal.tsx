@@ -13,6 +13,8 @@ import {
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { validateFile } from "../utils/FileHandler";
+import type { UploadFile } from "antd/es/upload/interface";
+import type { RcFile } from "antd/es/upload";
 
 interface FormModalProps {
   isOpen: boolean;
@@ -30,7 +32,8 @@ export interface FormModalRef {
 const FormModal = forwardRef<FormModalRef, FormModalProps>(
   ({ isOpen, onClose, onSubmit, title, fields, initialValues = {} }, ref) => {
     const [form] = Form.useForm();
-    const [fileList, setFileList] = useState<any[]>([]);
+    const [fileList, setFileList] = useState<UploadFile[]>([]);
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
     // Expose form instance to parent
     useImperativeHandle(ref, () => ({
@@ -44,43 +47,75 @@ const FormModal = forwardRef<FormModalRef, FormModalProps>(
       } else {
         form.resetFields();
         setFileList([]);
+        setUploadError(null);
       }
     }, [isOpen, initialValues, form]);
 
+    // Update form value when fileList changes
+    React.useEffect(() => {
+      const fileField = fields.find((f) => f.type === "upload");
+      if (fileField && fileList.length > 0) {
+        form.setFieldValue(fileField.name, fileList[0].originFileObj);
+      } else if (fileField) {
+        form.setFieldValue(fileField.name, undefined);
+      }
+    }, [fileList, fields, form]);
+
     const handleSubmit = async () => {
       try {
+        setUploadError(null);
         const values = await form.validateFields();
-
-        // Log the form values and fileList for debugging
-        console.log("Form values before submit:", values);
-        console.log("FileList before submit:", fileList);
 
         // Check if this is a file upload form
         const hasFileField = fields.some((field) => field.type === "upload");
+        const fileField = fields.find((f) => f.type === "upload");
 
-        if (hasFileField) {
+        if (hasFileField && fileField) {
           if (fileList.length === 0) {
-            message.error("Файл сонгогдоогүй байна");
+            setUploadError("Файл сонгоно уу!");
             return;
           }
-          // Ensure we're using the actual file object
+
           const file = fileList[0].originFileObj;
           if (!file) {
-            message.error("Файл сонгогдоогүй байна");
+            setUploadError("Файл сонгогдоогүй байна");
             return;
           }
-          values.file = file;
-        }
 
-        // Log the final values being submitted
-        console.log("Submitting values:", values);
+          // Validate file before submission
+          try {
+            const isValid = validateFile(file, {
+              maxSize: 10 * 1024 * 1024, // 10MB
+              accept: fileField.validation?.accept,
+            });
+
+            if (!isValid) {
+              setUploadError("Файл хэмжээ эсвэл төрөл буруу байна");
+              return;
+            }
+
+            // Ensure file is in form values
+            values[fileField.name] = file;
+          } catch (error) {
+            if (error instanceof Error) {
+              setUploadError(error.message);
+            } else {
+              setUploadError("Файл шалгахад алдаа гарлаа");
+            }
+            return;
+          }
+        }
 
         onSubmit(values);
         form.resetFields();
         setFileList([]);
+        setUploadError(null);
         onClose();
       } catch (error) {
         console.error("Form validation failed:", error);
+        if (error instanceof Error) {
+          setUploadError(error.message);
+        }
       }
     };
 
@@ -134,14 +169,40 @@ const FormModal = forwardRef<FormModalRef, FormModalProps>(
             <>
               <Upload
                 beforeUpload={(file) => {
-                  if (!validateFile(file, field.validation)) {
+                  try {
+                    const isValid = validateFile(file, {
+                      maxSize: field.validation?.maxSize || 10 * 1024 * 1024,
+                      accept: field.validation?.accept,
+                    });
+
+                    if (!isValid) {
+                      return Upload.LIST_IGNORE;
+                    }
+
+                    const newFile = {
+                      originFileObj: file,
+                      name: file.name,
+                      status: "done" as const,
+                      uid: file.uid,
+                    };
+                    setFileList([newFile]);
+                    setUploadError(null);
+                    return false;
+                  } catch (error) {
+                    if (error instanceof Error) {
+                      setUploadError(error.message);
+                    } else {
+                      setUploadError("Файл шалгахад алдаа гарлаа");
+                    }
                     return Upload.LIST_IGNORE;
                   }
-                  setFileList([{ originFileObj: file }]);
-                  return false;
                 }}
                 fileList={fileList}
-                onRemove={() => setFileList([])}
+                onRemove={() => {
+                  setFileList([]);
+                  setUploadError(null);
+                  form.setFieldValue(field.name, undefined);
+                }}
                 maxCount={1}
                 accept={field.validation?.accept}
               >
@@ -150,6 +211,11 @@ const FormModal = forwardRef<FormModalRef, FormModalProps>(
               {field.description && (
                 <div style={{ marginTop: 8, color: "#888", fontSize: 13 }}>
                   {field.description}
+                </div>
+              )}
+              {uploadError && (
+                <div style={{ marginTop: 8, color: "#ff4d4f", fontSize: 13 }}>
+                  {uploadError}
                 </div>
               )}
             </>
@@ -166,6 +232,7 @@ const FormModal = forwardRef<FormModalRef, FormModalProps>(
         onCancel={() => {
           form.resetFields();
           setFileList([]);
+          setUploadError(null);
           onClose();
         }}
         footer={[
@@ -184,6 +251,12 @@ const FormModal = forwardRef<FormModalRef, FormModalProps>(
               name={field.name}
               label={field.label}
               rules={field.rules}
+              validateStatus={
+                uploadError && field.type === "upload" ? "error" : undefined
+              }
+              help={
+                uploadError && field.type === "upload" ? uploadError : undefined
+              }
             >
               {renderField(field)}
             </Form.Item>

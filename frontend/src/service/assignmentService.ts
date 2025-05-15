@@ -7,6 +7,7 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Assignment, AssignmentSubmission } from "../components/types";
@@ -371,6 +372,73 @@ class AssignmentService {
       } else {
         console.error("Unexpected error updating submission grade:", error);
       }
+      throw error;
+    }
+  }
+
+  public async getAssignmentSubmissions(
+    assignmentId: string
+  ): Promise<AssignmentSubmission[]> {
+    try {
+      const q = query(
+        this.submissionsRef,
+        where("assignmentId", "==", assignmentId)
+      );
+      const querySnapshot = await getDocs(q);
+
+      const submissions: AssignmentSubmission[] = [];
+      for (const submissionDoc of querySnapshot.docs) {
+        const submission = {
+          id: submissionDoc.id,
+          ...submissionDoc.data(),
+        } as AssignmentSubmission;
+
+        // Try to get student name from users collection first
+        const studentDocRef = doc(db, "users", submission.studentId);
+        const studentDoc = await getDoc(studentDocRef);
+
+        if (studentDoc.exists()) {
+          const studentData = studentDoc.data();
+          submission.studentName =
+            studentData.displayName || studentData.name || "Unknown Student";
+        } else {
+          // If not found in users, try profiles collection
+          const profileDocRef = doc(db, "profiles", submission.studentId);
+          const profileDoc = await getDoc(profileDocRef);
+
+          if (profileDoc.exists()) {
+            const profileData = profileDoc.data();
+            submission.studentName = profileData.name || "Unknown Student";
+          } else {
+            submission.studentName = "Unknown Student";
+          }
+        }
+
+        submissions.push(submission);
+      }
+
+      return submissions;
+    } catch (error) {
+      console.error("Error fetching assignment submissions:", error);
+      throw error;
+    }
+  }
+
+  public async gradeSubmission(
+    submissionId: string,
+    grade: number,
+    feedback: string
+  ): Promise<void> {
+    try {
+      const submissionRef = doc(this.submissionsRef, submissionId);
+      await updateDoc(submissionRef, {
+        grade,
+        feedback,
+        status: "graded",
+        gradedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Error grading submission:", error);
       throw error;
     }
   }

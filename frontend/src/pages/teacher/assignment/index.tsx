@@ -6,11 +6,6 @@ import CourseService from "../../../service/courseService";
 import AssignmentService from "../../../service/assignmentService";
 import type { CourseData, Assignment } from "../../../components/types";
 
-interface Event {
-  type: "success" | "warning" | "error" | "info";
-  content: string;
-}
-
 interface TeacherAssignmentPageProps {
   section?: "main" | "sidebar";
 }
@@ -20,26 +15,23 @@ const TeacherAssignmentPage: React.FC<TeacherAssignmentPageProps> = ({
 }) => {
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [coursesData, assignmentsData] = await Promise.all([
-          CourseService.getAllCourses(),
-          AssignmentService.getAllAssignments(),
-        ]);
-        setCourses(coursesData);
-        setAssignments(assignmentsData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const [coursesData, assignmentsData] = await Promise.all([
+        CourseService.getAllCourses(),
+        AssignmentService.getAllAssignments(),
+      ]);
+      setCourses(coursesData);
+      setAssignments(assignmentsData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
   const handleAddAssignment = async (newAssignment: Omit<Assignment, "id">) => {
     try {
@@ -52,38 +44,15 @@ const TeacherAssignmentPage: React.FC<TeacherAssignmentPageProps> = ({
 
   const handleDeleteAssignment = async (assignmentId: string) => {
     try {
-      // Update local state immediately to reflect the deletion
+      await AssignmentService.deleteAssignment(assignmentId);
       setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
     } catch (error) {
       console.error("Error deleting assignment:", error);
     }
   };
 
-  // Debug: log courses and assignments on every render
-  console.log("courses:", courses);
-  console.log("assignments:", assignments);
-
   if (section === "sidebar") {
-    return (
-      <div className="space-y-4">
-        <Card title="Хуваарь">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>Хичээл</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span>Дасгал</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>Шалгалт</span>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
+    return null;
   }
 
   return (

@@ -130,7 +130,7 @@ const StudentAssignmentDropdowns: React.FC<StudentAssignmentDropdownsProps> = ({
 
     if (isSubmitted) {
       return status === "graded"
-        ? `Шалгалт өгсөн${
+        ? `Шалгагдсан${
             assignment.submission?.grade
               ? ` (${assignment.submission.grade})`
               : ""

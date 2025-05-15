@@ -27,7 +27,7 @@ const StudentAssignmentPage = lazy(() => import("../pages/student/assignment"));
 // const TeacherHomePage = lazy(() => import("../pages/teacher/home"));
 const TeacherCoursePage = lazy(() => import("../pages/teacher/course"));
 const TeacherAssignmentPage = lazy(() => import("../pages/teacher/assignment"));
-
+const TeacherStudentsPage = lazy(() => import("../pages/teacher/students"));
 // Admin Pages - Uncomment when implementing
 // const AdminHomePage = lazy(() => import("../pages/admin/home"));
 // const AdminDashboardPage = lazy(() => import("../pages/admin/dashboard"));
@@ -167,6 +167,14 @@ const RoleBasedRoutes: React.FC = () => {
             element={
               <DashboardContent
                 mainContent={<TeacherAssignmentPage section="main" />}
+              />
+            }
+          />
+          <Route
+            path="students"
+            element={
+              <DashboardContent
+                mainContent={<TeacherStudentsPage section="main" />}
               />
             }
           />

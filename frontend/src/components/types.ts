@@ -87,6 +87,7 @@ export type AssignmentSubmission = {
   id: string;
   assignmentId: string;
   studentId: string;
+  studentName?: string;
   fileUrl: string;
   fileName: string;
   comment: string;
@@ -94,6 +95,7 @@ export type AssignmentSubmission = {
   status: "pending" | "graded";
   grade?: number;
   feedback?: string;
+  gradedAt?: string;
 };
 
 export type Assignment = {
