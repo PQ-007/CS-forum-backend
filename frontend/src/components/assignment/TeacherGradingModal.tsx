@@ -1,7 +1,6 @@
+import { Button, Form, Input, InputNumber, Modal } from "antd";
 import React from "react";
-import { Modal, Form, Input, InputNumber, Button, Space } from "antd";
 import type { AssignmentSubmission } from "../types";
-import { DownloadOutlined } from "@ant-design/icons";
 
 interface TeacherGradingModalProps {
   isOpen: boolean;

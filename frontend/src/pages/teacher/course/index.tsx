@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import AddButton from "../../../components/button/AddButton";
 import FormModal from "../../../components/Modal";
@@ -6,6 +6,7 @@ import { courseFields, fileFields, sectionFields } from "../type";
 import { CourseData, ModalFormValues } from "../../../components/types";
 import { useCourseManager } from "../../../components/course/CourseManageState";
 import CourseCard from "../../../components/course/CourseCard";
+import { Loading } from "../../../components/Loading";
 
 interface TeacherCoursePageProps {
   section: "main" | "sidebar";
@@ -17,6 +18,8 @@ export const TeacherCoursePage: React.FC<TeacherCoursePageProps> = ({
   courses: propCourses,
 }) => {
   const { userData } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+
   const {
     courses,
     expandedCard,
@@ -37,6 +40,23 @@ export const TeacherCoursePage: React.FC<TeacherCoursePageProps> = ({
     handleDeleteSection,
   } = useCourseManager(propCourses);
 
+  // Add useEffect to handle loading state
+  useEffect(() => {
+    // If courses are provided via props or loaded from useCourseManager
+    if (courses && courses.length > 0) {
+      setIsLoading(false);
+    } else if (propCourses && propCourses.length > 0) {
+      setIsLoading(false);
+    }
+
+    // Set a timeout to ensure loading doesn't display indefinitely
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [courses, propCourses]);
+
   const getModalFields = () => {
     switch (modalType) {
       case "file":
@@ -53,6 +73,10 @@ export const TeacherCoursePage: React.FC<TeacherCoursePageProps> = ({
   const handleSubmit = (values: ModalFormValues) => {
     handleModalSubmit(values);
   };
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   if (section === "main") {
     return (

@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from "react";
+import { CaretRightOutlined } from "@ant-design/icons";
 import {
-  Spin,
+  Badge,
+  Card,
+  Collapse,
   Empty,
   message,
-  Typography,
-  Badge,
   Tooltip,
-  Collapse,
-  Card,
+  Typography,
 } from "antd";
-import { CaretRightOutlined } from "@ant-design/icons";
-import courseService from "../../../service/courseService";
-import assignmentService from "../../../service/assignmentService";
-import { useAuth } from "../../../context/AuthContext";
-import { CourseData, Assignment } from "../../../components/types";
-import CourseCard from "../../../components/course/CourseCard";
 import dayjs from "dayjs";
+import React, { useEffect, useState } from "react";
+import CourseCard from "../../../components/course/CourseCard";
+import { Loading } from "../../../components/Loading";
+import { Assignment, CourseData } from "../../../components/types";
+import { useAuth } from "../../../context/AuthContext";
+import assignmentService from "../../../service/assignmentService";
+import courseService from "../../../service/courseService";
 
 const { Text } = Typography;
 const { Panel } = Collapse;
@@ -92,11 +92,7 @@ const StudentCoursePage: React.FC<StudentCoursePageProps> = ({ section }) => {
   });
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spin size="large" tip="Мэдээллийг ачааллаж байна..." />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (section === "main") {
