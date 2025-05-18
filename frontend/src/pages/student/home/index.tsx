@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from "react";
-import {
-  Card,
-  Row,
-  Col,
-  Statistic,
-  Progress,
-  List,
-  Typography,
-  Tag,
-  Spin,
-} from "antd";
 import {
   BookOutlined,
-  ClockCircleOutlined,
   CheckCircleOutlined,
+  ClockCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import { useAuth } from "../../../context/AuthContext";
-import CourseService from "../../../service/courseService";
-import AssignmentService from "../../../service/assignmentService";
-import type { CourseData, Assignment } from "../../../components/types";
+import {
+  Card,
+  Col,
+  List,
+  Progress,
+  Row,
+  Statistic,
+  Tag,
+  Typography,
+} from "antd";
 import dayjs from "dayjs";
+import React, { useEffect, useState } from "react";
+import { Loading } from "../../../components/Loading";
+import type { Assignment, CourseData } from "../../../components/types";
+import { useAuth } from "../../../context/AuthContext";
+import AssignmentService from "../../../service/assignmentService";
+import CourseService from "../../../service/courseService";
 
 const { Title, Text } = Typography;
 
@@ -106,11 +106,7 @@ const StudentHomePage: React.FC<StudentHomePageProps> = ({ section }) => {
     );
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spin size="large" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (section === "main") {

@@ -1,26 +1,27 @@
-import React, { useState, useEffect } from "react";
 import {
-  Card,
-  Table,
-  Tag,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  FileOutlined,
+} from "@ant-design/icons";
+import {
   Button,
-  Modal,
+  Card,
   Form,
   Input,
   InputNumber,
   message,
-  Typography,
+  Modal,
   Space,
+  Table,
+  Tag,
+  Typography,
 } from "antd";
-import {
-
-  FileOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-} from "@ant-design/icons";
-import type { Assignment, AssignmentSubmission } from "../types";
-import AssignmentService from "../../service/assignmentService";
 import dayjs from "dayjs";
+import React, { useEffect, useState } from "react";
+import FilePreview from "../../components/common/FilePreview";
+import AssignmentService from "../../service/assignmentService";
+import { getFileUrl } from "../../service/fileService";
+import type { Assignment, AssignmentSubmission } from "../types";
 
 const { Text } = Typography;
 
@@ -37,6 +38,9 @@ const TeacherAssignmentSubmissions: React.FC<
   const [selectedSubmission, setSelectedSubmission] =
     useState<AssignmentSubmission | null>(null);
   const [form] = Form.useForm();
+  const [previewFile, setPreviewFile] = useState<AssignmentSubmission | null>(
+    null
+  );
 
   useEffect(() => {
     fetchSubmissions();
@@ -81,6 +85,19 @@ const TeacherAssignmentSubmissions: React.FC<
       feedback: submission.feedback,
     });
     setIsModalOpen(true);
+  };
+
+  const handleFileClick = (submission: AssignmentSubmission) => {
+    try {
+      const fileUrl = getFileUrl(submission.fileUrl);
+      setPreviewFile({
+        ...submission,
+        fileUrl,
+      });
+    } catch (error) {
+      message.error("Файл нээхэд алдаа гарлаа");
+      console.error("Error getting file URL:", error);
+    }
   };
 
   const columns = [
@@ -224,6 +241,15 @@ const TeacherAssignmentSubmissions: React.FC<
           </Form.Item>
         </Form>
       </Modal>
+
+      {previewFile && (
+        <FilePreview
+          fileUrl={previewFile.fileUrl}
+          fileName={previewFile.fileName}
+          open={true}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
     </div>
   );
 };

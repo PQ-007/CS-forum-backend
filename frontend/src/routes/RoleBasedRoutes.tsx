@@ -195,7 +195,7 @@ const RoleBasedRoutes: React.FC = () => {
             element={
               <DashboardContent
                 mainContent={<TeacherCoursePage section="main" />}
-                sidebarContent={<TeacherCoursePage section="sidebar" />}
+                // sidebarContent={<TeacherCoursePage section="sidebar" />}
               />
             }
           />

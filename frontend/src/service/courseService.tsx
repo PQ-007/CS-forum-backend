@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { CourseData } from "../components/types";
+import assignmentService from "./assignmentService";
 
 class CourseService {
   private static instance: CourseService;
@@ -216,6 +217,30 @@ class CourseService {
         throw new Error(`Failed to delete course: ${error.message}`);
       }
       throw new Error("Failed to delete course");
+    }
+  }
+
+  public async deleteCourseContent(contentId: string): Promise<void> {
+    try {
+      // Get the course ID before deleting the content
+      const contentRef = doc(db, "courseContent", contentId);
+      const contentDoc = await getDoc(contentRef);
+
+      if (contentDoc.exists()) {
+        const courseId = contentDoc.data().courseId;
+
+        // Delete the content
+        await deleteDoc(contentRef);
+
+        // Delete all associated assignments
+        if (courseId) {
+          // Use the imported service directly
+          await assignmentService.deleteAssignmentsByCourseId(courseId);
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting course content:", error);
+      throw error;
     }
   }
 }

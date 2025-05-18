@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { Card, Row, Col, Statistic, Spin, Typography } from "antd";
 import {
   BookOutlined,
-  FileOutlined,
   CalendarOutlined,
+  FileOutlined,
 } from "@ant-design/icons";
+import { Card, Col, Row, Statistic, Typography } from "antd";
+import React, { useEffect, useState } from "react";
 import StudentAssignmentDropdowns from "../../../components/assignment/StudentAssignmentDropdowns";
-import CourseService from "../../../service/courseService";
-import AssignmentService from "../../../service/assignmentService";
-import type { CourseData, Assignment } from "../../../components/types";
+import { Loading } from "../../../components/Loading";
+import type { Assignment, CourseData } from "../../../components/types";
 import { useAuth } from "../../../context/AuthContext";
+import AssignmentService from "../../../service/assignmentService";
+import CourseService from "../../../service/courseService";
 
 const { Title } = Typography;
 
@@ -69,6 +70,10 @@ const StudentAssignmentPage: React.FC<StudentAssignmentPageProps> = ({
 
   useEffect(() => {
     fetchData();
+
+    // Optional: Set up a refresh interval
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
   }, [userData, user]);
 
   // Calculate upcoming assignments (due in next 7 days)
@@ -82,11 +87,7 @@ const StudentAssignmentPage: React.FC<StudentAssignmentPageProps> = ({
   });
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spin size="large" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (section === "main") {

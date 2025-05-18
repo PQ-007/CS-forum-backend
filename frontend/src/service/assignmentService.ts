@@ -442,6 +442,26 @@ class AssignmentService {
       throw error;
     }
   }
+
+  public async deleteAssignmentsByCourseId(courseId: string): Promise<void> {
+    try {
+      // First, find all assignments for this course
+      const assignmentsToDelete = await this.getAssignmentsByCourse(courseId);
+
+      // Then delete each one
+      const deletePromises = assignmentsToDelete.map((assignment) =>
+        this.deleteAssignment(assignment.id)
+      );
+
+      await Promise.all(deletePromises);
+      console.log(
+        `Deleted ${assignmentsToDelete.length} assignments for course ${courseId}`
+      );
+    } catch (error) {
+      console.error("Error deleting assignments for course:", error);
+      throw error;
+    }
+  }
 }
 
 export default AssignmentService.getInstance();

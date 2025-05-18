@@ -5,6 +5,7 @@ import AssignmentCalendar from "../../../components/Calendar";
 import CourseService from "../../../service/courseService";
 import AssignmentService from "../../../service/assignmentService";
 import type { CourseData, Assignment } from "../../../components/types";
+import { Loading } from "../../../components/Loading";
 
 interface TeacherAssignmentPageProps {
   section?: "main" | "sidebar";
@@ -15,12 +16,14 @@ const TeacherAssignmentPage: React.FC<TeacherAssignmentPageProps> = ({
 }) => {
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true); // Add loading state
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    setLoading(true); // Set loading to true when fetching starts
     try {
       const [coursesData, assignmentsData] = await Promise.all([
         CourseService.getAllCourses(),
@@ -30,6 +33,8 @@ const TeacherAssignmentPage: React.FC<TeacherAssignmentPageProps> = ({
       setAssignments(assignmentsData);
     } catch (error) {
       console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false); // Set loading to false when fetching completes (success or error)
     }
   };
 
@@ -50,6 +55,10 @@ const TeacherAssignmentPage: React.FC<TeacherAssignmentPageProps> = ({
       console.error("Error deleting assignment:", error);
     }
   };
+
+  if (loading) {
+    return <Loading />;
+  }
 
   if (section === "sidebar") {
     return null;
