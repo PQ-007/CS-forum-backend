@@ -43,7 +43,7 @@ const SideBar = () => {
             alt="Logo"
             className="w-6"
           />
-          <span className="text-[20px] text-white font-medium">Sakura</span>
+          <span className="text-[20px] text-white font-medium">FutureHub</span>
         </div>
 
    
