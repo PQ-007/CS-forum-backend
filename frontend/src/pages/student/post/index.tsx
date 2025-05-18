@@ -9,6 +9,7 @@ import { articleService, questionService } from "../../../service/postService";
 import { Article, Question } from "./type";
 import { useTab } from "../../../context/TabContext";
 import Sider from "./sider";
+import { Loading } from "../../../components/Loading";
 
 const { TabPane } = Tabs;
 
@@ -42,7 +43,6 @@ const PostTabs = () => {
   );
 };
 
-
 const PostContent = () => {
   const { activeTab } = useTab();
   const [articles, setArticles] = useState<Article[]>([]);
@@ -69,9 +69,9 @@ const PostContent = () => {
     };
 
     fetchPosts();
-  }, [activeTab]); 
+  }, [activeTab]);
 
-  if (loading) return <Spin className="mt-10" size="large" />;
+  if (loading) return <Loading />;
 
   return (
     <div className="grid gap-6 mt-6">
