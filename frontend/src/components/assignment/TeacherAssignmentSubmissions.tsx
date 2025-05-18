@@ -255,7 +255,3 @@ const TeacherAssignmentSubmissions: React.FC<
 };
 
 export default TeacherAssignmentSubmissions;
-function handleFileClick(_record: AssignmentSubmission): void {
-  throw new Error("Function not implemented.");
-}
-

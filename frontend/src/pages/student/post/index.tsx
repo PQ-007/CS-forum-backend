@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Tabs, Spin } from "antd";
+import { Tabs } from "antd";
 import { BulbOutlined, FireOutlined } from "@ant-design/icons";
 
 import ArticlesList from "../../../components/post/article/ArtcilesList";
