@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Tag, Collapse, Badge, Input, Button, message } from "antd";
-import {
-  UserOutlined,
-  CalendarOutlined,
-  MessageOutlined,
-} from "@ant-design/icons";
+import { UserOutlined, CalendarOutlined, MessageOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { Question } from "../../pages/student/post/type";
 import { useAuth } from "../../context/AuthContext";
-import { questionService } from "../../service/postService";
+import { Question } from "../../pages/student/post/type";
+import profileService from "../../service/profileService";
 import { v4 as uuidv4 } from "uuid";
+import { questionService } from "../../service/postService";
 
 interface Props {
   questions: Question[];
@@ -17,16 +14,32 @@ interface Props {
 
 const { Panel } = Collapse;
 
-const QuestionsList: React.FC<Props> = ({ questions: initialQuestions }) => {
+const QuestionsList: React.FC<Props> = ({ questions }) => {
   const { user } = useAuth();
-  const [questions, setQuestions] = useState<Question[]>(initialQuestions);
-  const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
-  const [loadingComments, setLoadingComments] = useState<{ [key: string]: boolean }>({});
+  const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({});
 
-  // Sync local state if parent updates questions prop
   useEffect(() => {
-    setQuestions(initialQuestions);
-  }, [initialQuestions]);
+    const uniqueAuthors = Array.from(new Set(questions.map((q) => q.author)));
+
+    Promise.all(
+      uniqueAuthors.map(async (authorId) => {
+        try {
+          const profile = await profileService.getProfile(authorId);
+          return { authorId, name: profile?.name || authorId };
+        } catch {
+          return { authorId, name: authorId };
+        }
+      })
+    ).then((results) => {
+      const namesMap: Record<string, string> = {};
+      results.forEach(({ authorId, name }) => {
+        namesMap[authorId] = name;
+      });
+      setAuthorNames(namesMap);
+    });
+  }, [questions]);
 
   const handleCommentChange = (questionId: string, value: string) => {
     setCommentInputs((prev) => ({ ...prev, [questionId]: value }));
@@ -36,41 +49,31 @@ const QuestionsList: React.FC<Props> = ({ questions: initialQuestions }) => {
     const content = commentInputs[questionId]?.trim();
     if (!content) return;
 
-    try {
-      setLoadingComments((prev) => ({ ...prev, [questionId]: true }));
+    setLoadingComments((prev) => ({ ...prev, [questionId]: true }));
 
+    try {
       const newComment = {
         content,
         author: user?.displayName || "Unknown",
         postedAt: new Date().toISOString(),
       };
 
-      // Add comment to backend
       await questionService.addComment(questionId, newComment);
 
       message.success("Сэтгэгдэл нэмэгдлээ");
 
-      // Update local questions state to immediately reflect comment addition
-      setQuestions((prevQuestions) =>
-        prevQuestions.map((q) =>
-          q.id === questionId
-            ? {
-                ...q,
-                comments: [
-                  ...q.comments,
-                  {
-                    id: uuidv4(),
-                    content: newComment.content,
-                    author: newComment.author,
-                    postedAt: new Date(newComment.postedAt),
-                  },
-                ],
-              }
-            : q
-        )
-      );
+      // Update local state directly (optimistic UI)
+      questions.forEach((q) => {
+        if (q.id === questionId) {
+          q.comments.push({
+            id: uuidv4(),
+            content: newComment.content,
+            author: newComment.author,
+            postedAt: new Date(newComment.postedAt),
+          });
+        }
+      });
 
-      // Clear input for this question
       setCommentInputs((prev) => ({ ...prev, [questionId]: "" }));
     } catch (err) {
       console.error(err);
@@ -91,13 +94,11 @@ const QuestionsList: React.FC<Props> = ({ questions: initialQuestions }) => {
         >
           <div className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div
-                  className="text-lg font-bold hover:underline cursor-pointer"
-                  title={post.content}
-                >
-                  {post.content}
-                </div>
+              <div
+                className="text-lg font-bold hover:underline cursor-pointer"
+                title={post.content}
+              >
+                {post.content}
               </div>
               {post.comments.length > 0 && (
                 <Badge
@@ -115,7 +116,7 @@ const QuestionsList: React.FC<Props> = ({ questions: initialQuestions }) => {
             <div className="flex flex-wrap gap-2 text-xs text-gray-500 mt-2">
               <span className="flex items-center gap-1">
                 <UserOutlined />
-                {post.author}
+                {authorNames[post.author] || post.author}
               </span>
               <span className="flex items-center gap-1">
                 <CalendarOutlined />
@@ -129,10 +130,7 @@ const QuestionsList: React.FC<Props> = ({ questions: initialQuestions }) => {
             </div>
 
             <Collapse ghost className="mt-2">
-              <Panel
-                header={`View Comments (${post.comments.length})`}
-                key="comments"
-              >
+              <Panel header={`Сэтгэгдэл харах (${post.comments.length})`} key="comments">
                 {post.comments.map((comment) => (
                   <div
                     key={comment.id}
@@ -146,14 +144,11 @@ const QuestionsList: React.FC<Props> = ({ questions: initialQuestions }) => {
                   </div>
                 ))}
 
-                {/* New comment input */}
                 <div className="mt-4">
                   <Input.TextArea
                     rows={2}
                     value={commentInputs[post.id] || ""}
-                    onChange={(e) =>
-                      handleCommentChange(post.id, e.target.value)
-                    }
+                    onChange={(e) => handleCommentChange(post.id, e.target.value)}
                     placeholder="Сэтгэгдлээ бичнэ үү..."
                   />
                   <div className="text-right mt-2">

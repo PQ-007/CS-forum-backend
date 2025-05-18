@@ -2,7 +2,6 @@ import {
   BookOutlined,
   HomeOutlined,
   TeamOutlined,
-  DashboardOutlined,
   FormOutlined,
   NotificationOutlined,
   CalendarOutlined,
@@ -70,19 +69,15 @@ export const TeacherMenuItems = [
 
 // Admin Menu Items
 export const AdminMenuItems = [
-  {
-    icon: <HomeOutlined />,
-    label: "Үндсэн цэс",
-    path: "/dashboard/admin/home",
-  },
-  {
-    icon: <DashboardOutlined />,
-    label: "Хяналтын самбар",
-    path: "/dashboard/admin/dashboard",
-  },
+
+  // {
+  //   icon: <DashboardOutlined />,
+  //   label: "Хяналтын самбар",
+  //   path: "/dashboard/admin/stats",
+  // },
   {
     icon: <TeamOutlined />,
     label: "Хэрэглэгчид",
-    path: "/dashboard/admin/users",
+    path: "/dashboard/admin/users-list",
   },
 ];

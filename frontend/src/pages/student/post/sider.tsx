@@ -5,11 +5,10 @@ import { Button, Checkbox, Select, Upload, Modal, Form, Input } from "antd";
 import { useNavigate } from "react-router-dom";
 import { questionService } from "../../../service/postService";
 import { useAuth } from "../../../context/AuthContext";
-
 const Sider: React.FC = () => {
   const { activeTab } = useTab();
   const navigate = useNavigate();
-  const { user } = useAuth(); // ✅ use it here at the top level
+  const { user } = useAuth(); 
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
@@ -62,7 +61,7 @@ const Sider: React.FC = () => {
         <h4 className="font-semibold text-sm mb-2">Эрэмбэлэх</h4>
         <Select defaultValue="Newest" style={{ width: "100%" }}>
           <Select.Option value="Newest">Хамгийн сүүлд</Select.Option>
-          <Select.Option value="Popular">Алдар нэрээр</Select.Option>
+          <Select.Option value="Popular">Хамгийн их хандалттай</Select.Option>
         </Select>
       </div>
     );

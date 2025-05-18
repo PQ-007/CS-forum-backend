@@ -2,175 +2,206 @@ import React, { useRef, useEffect, useState } from "react";
 import EditorJS from "@editorjs/editorjs";
 import Header from "@editorjs/header";
 import List from "@editorjs/list";
-import { Select, message } from "antd";
-import { useParams} from "react-router-dom";
+import { Select, message, Button } from "antd";
+import { useParams, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
-import {articleService} from "../../../service/postService";
+import { articleService } from "../../../service/postService";
 import { useAuth } from "../../../context/AuthContext";
 
-// const location = useLocation();
-// const isNew = new URLSearchParams(location.search).get("new") === "true";
+
 const availableTags = ["Firebase", "React", "Tailwind", "JavaScript", "CSS"];
 
-const AddArticle: React.FC = () => {
+const AddArticleEditorJS: React.FC = () => {
   const ejInstance = useRef<EditorJS | null>(null);
   const { user } = useAuth();
-  const { id } = useParams();
+  const { id } = useParams(); 
+  const navigate = useNavigate();
+
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [initialContent, setInitialContent] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isEditorReady, setIsEditorReady] = useState<boolean>(false);
 
-  // Fetch article if editing
+
   useEffect(() => {
-    const fetchArticle = async () => {
-      if (!id) return;
+    if (!id) {
+      setIsEditing(false);
+      return;
+    }
 
+    (async () => {
       try {
         const article = await articleService.getArticleById(id);
         if (article) {
+          setIsEditing(true);
           setTitle(article.title);
           setTags(article.tags || []);
-          setInitialContent(JSON.parse(article.content));
+          setInitialContent(article.content ? JSON.parse(article.content) : null);
+        } else {
+          message.error("Article not found. Treating as new article.");
+          setIsEditing(false);
         }
       } catch (err) {
-        console.error("Article fetch failed", err);
+        console.error("Failed to load article:", err);
+        message.error("Failed to load article. Treating as new article.");
+        setIsEditing(false);
       }
-    };
-
-    fetchArticle();
+    })();
   }, [id]);
 
-  // Initialize EditorJS after initialContent or on mount
   useEffect(() => {
-    const initializeEditor = async () => {
-      if (ejInstance.current || !document.getElementById("editorjs")) return;
+    const checkEditorElement = () => {
+      if (document.getElementById("editorjs")) {
+        setIsEditorReady(true);
+      } else {
+        setTimeout(checkEditorElement, 100);
+      }
+    };
+    checkEditorElement();
+  }, []);
 
+  // Initialize EditorJS only when DOM is ready
+  useEffect(() => {
+    const editorElement = document.getElementById("editorjs");
+    if (!editorElement || ejInstance.current || !isEditorReady) {
+      return;
+    }
+
+    try {
       ejInstance.current = new EditorJS({
         holder: "editorjs",
         autofocus: true,
-        placeholder: "Текстээ энд бичнэ үү",
+        placeholder: "Нийтлэлийн текстээ энд бичнэ үү",
         tools: {
           header: Header,
           list: List,
         },
         data: initialContent || undefined,
         onReady: () => {
-          console.log("Editor.js is ready");
+          console.log("EditorJS is ready");
         },
       });
-    };
-
-    initializeEditor();
+    } catch (err) {
+      console.error("EditorJS initialization failed:", err);
+      message.error("Failed to initialize editor.");
+    }
 
     return () => {
-      if (
-        ejInstance.current &&
-        typeof ejInstance.current.destroy === "function"
-      ) {
+      if (ejInstance.current && typeof ejInstance.current.destroy === "function") {
         ejInstance.current.destroy();
+        ejInstance.current = null;
       }
-      ejInstance.current = null;
     };
-  }, [initialContent]);
+  }, [initialContent, isEditorReady]);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      message.error("Гарчигийг заавал бөглөнө үү.");
+      message.error("Гарчигийг оруулна уу.");
       return;
     }
-
     if (!user) {
-      message.error("Хэрэглэгчийн мэдээлэл олдсонгүй.");
+      message.error("Хэрэглэгч олдсонгүй. Нэвтэрнэ үү.");
+      navigate("/login");
       return;
     }
 
     try {
-      const outputData = await ejInstance.current?.save();
+      const savedData = await ejInstance.current?.save();
 
-      if (!outputData || outputData.blocks.length === 0) {
+      if (!savedData || savedData.blocks.length === 0) {
         message.error("Агуулга хоосон байна.");
         return;
       }
 
       const article = {
-        id: id ?? uuidv4(),
+        id: isEditing && id ? id : uuidv4(),
         title,
         author: user.uid,
-        content: JSON.stringify(outputData),
+        content: JSON.stringify(savedData),
         tags,
         imageUrl: "",
         publishedDate: new Date(),
-        views: 0,
-        likes: 0,
-        comments: [],
+        views: isEditing ? undefined : 0,
+        likes: isEditing ? undefined : 0,
+        comments: isEditing ? undefined : [],
       };
 
-      if (id) {
+      if (isEditing && id) {
         await articleService.updateArticle(article.id, article);
         message.success("Нийтлэл амжилттай шинэчлэгдлээ!");
       } else {
         await articleService.createArticle(article);
         message.success("Нийтлэл амжилттай нэмэгдлээ!");
+        navigate(`/dashboard/student/post/article/write/${article.id}`);
       }
 
-      setTitle("");
-      setTags([]);
-      // Re-initialize editor with empty data
-      ejInstance.current?.render({ blocks: [] });
-    } catch (error) {
-      console.error("Saving failed: ", error);
+      if (!isEditing) {
+        setTitle("");
+        setTags([]);
+        ejInstance.current?.render({ blocks: [] });
+      }
+    } catch (err) {
+      console.error("Хадгалах алдаа:", err);
       message.error("Нийтлэх үед алдаа гарлаа.");
     }
   };
 
+  const handleBack = () => {
+    navigate(-1); // Go back to previous page
+    // Alternatively, use a specific route: navigate("/dashboard/student/post");
+  };
+
   return (
     <div className="max-w-3xl mx-auto py-10 px-6">
+      <div className="flex justify-between mb-6">
+        
+      </div>
+
       <input
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Нийтлэлийн гарчиг"
-        className="w-full text-4xl font-extrabold leading-tight border-0 border-b-2 border-gray-200 focus:outline-none focus:border-indigo-500 placeholder-gray-400 mb-10 transition-colors"
-        onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+        className="w-full text-4xl font-extrabold mb-6 border-b-2 border-gray-300 focus:outline-none focus:border-indigo-500"
       />
 
       <div
         id="editorjs"
-        className="prose max-w-none min-h-[350px] border border-gray-200 rounded-lg px-6 py-8 shadow-sm focus-within:ring-2 focus-within:ring-indigo-400 transition"
-        style={{
-          fontFamily:
-            "Georgia, serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif",
-          fontSize: "18px",
-          lineHeight: 1.7,
-          color: "#222",
-        }}
+        className="min-h-[350px] border border-gray-300 rounded-md px-4 py-6 shadow-sm"
+        style={{ fontFamily: "Georgia, serif", fontSize: "18px", lineHeight: 1.6 }}
       />
 
-      <div className="mt-10">
+      <div className="mt-6">
         <Select
           mode="multiple"
           allowClear
-          placeholder="Тагуудыг сонгох (Firebase, React ...)"
+          placeholder="Тагуудыг сонгох"
           value={tags}
           onChange={setTags}
           className="w-full"
           size="large"
-          dropdownClassName="rounded-md shadow-lg"
-          style={{ borderRadius: 6 }}
           options={availableTags.map((tag) => ({ label: tag, value: tag }))}
         />
       </div>
 
-      <div className="mt-12 flex justify-end">
-        <button
-          onClick={handleSubmit}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-md shadow-md transition transform active:scale-95"
+      <div className="mt-8 flex justify-end gap-4">
+        <Button
+          type="default"
+          onClick={handleBack}
         >
-          {id ? "Шинэчлэх" : "Нийтлэл нэмэх"}
-        </button>
+          Буцах
+        </Button>
+        <Button
+          type="primary"
+          onClick={handleSubmit}
+          className="bg-indigo-600 hover:bg-indigo-700"
+        >
+          {isEditing ? "Шинэчлэх" : "Нийтлэл нэмэх"}
+        </Button>
       </div>
     </div>
   );
 };
 
-export default AddArticle;
+export default AddArticleEditorJS;

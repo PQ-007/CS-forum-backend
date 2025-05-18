@@ -46,7 +46,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // If already authorized, redirect to dashboard based on role
     if (authorized) {
       console.log(`Already authorized, redirecting to ${userRole} dashboard`);
-      return <Navigate to={`/dashboard/${userRole}/home`} replace />;
+      return (
+        <Navigate
+          to={`/dashboard/${userRole}/${
+            userRole === "admin" ? "users-list" : "home"
+          }`}
+          replace
+        />
+      );
     }
     // If not authorized, show the children
     return <>{children}</>;
