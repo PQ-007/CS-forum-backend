@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Card, Row, Col, Statistic, Empty, Spin } from "antd";
+import { Card, Row, Col, Statistic, Spin, Typography } from "antd";
 import {
   BookOutlined,
   FileOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
-import AssignmentCalendar from "../../../components/Calendar";
+import StudentAssignmentDropdowns from "../../../components/assignment/StudentAssignmentDropdowns";
 import CourseService from "../../../service/courseService";
 import AssignmentService from "../../../service/assignmentService";
 import type { CourseData, Assignment } from "../../../components/types";
 import { useAuth } from "../../../context/AuthContext";
+
+const { Title } = Typography;
 
 interface StudentAssignmentPageProps {
   section?: "main" | "sidebar";
@@ -21,37 +23,53 @@ const StudentAssignmentPage: React.FC<StudentAssignmentPageProps> = ({
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const { userData } = useAuth();
+  const { userData, user } = useAuth();
+
+  const fetchData = async () => {
+    try {
+      if (userData?.year && user?.uid) {
+        const [coursesData, assignmentsData] = await Promise.all([
+          CourseService.getStudentCourses(userData.year),
+          AssignmentService.getAllAssignments(),
+        ]);
+
+        setCourses(coursesData);
+
+        // Filter assignments for student's year and fetch submissions
+        const filteredAssignments = assignmentsData.filter(
+          (assignment) => assignment.year === userData.year
+        );
+
+        // Fetch submissions for each assignment
+        const assignmentsWithSubmissions = await Promise.all(
+          filteredAssignments.map(async (assignment) => {
+            try {
+              const submission = await AssignmentService.getSubmission(
+                assignment.id,
+                user.uid
+              );
+              return { ...assignment, submission };
+            } catch {
+              return assignment;
+            }
+          })
+        );
+
+        setAssignments(assignmentsWithSubmissions);
+      } else {
+        console.error("User year or uid not found");
+        setAssignments([]);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (userData?.year) {
-          const [coursesData, assignmentsData] = await Promise.all([
-            CourseService.getStudentCourses(userData.year),
-            AssignmentService.getAllAssignments(),
-          ]);
-
-          setCourses(coursesData);
-
-          // Filter assignments for student's year
-          const filteredAssignments = assignmentsData.filter(
-            (assignment) => assignment.year === userData.year
-          );
-          setAssignments(filteredAssignments);
-        } else {
-          console.error("User year not found");
-          setAssignments([]);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, [userData]);
+  }, [userData, user]);
 
   // Calculate upcoming assignments (due in next 7 days)
   const upcomingAssignments = assignments.filter((assignment) => {
@@ -73,49 +91,62 @@ const StudentAssignmentPage: React.FC<StudentAssignmentPageProps> = ({
 
   if (section === "main") {
     return (
-      <div className="space-y-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <Title level={2} className="!mb-2">
+            Даалгаврууд
+          </Title>
+          <p className="text-gray-600">Таны хичээлийн даалгавруудын жагсаалт</p>
+        </div>
+
         {/* Stats Cards */}
-        <Row gutter={[24, 24]}>
+        <Row gutter={[24, 24]} className="mb-8">
           <Col xs={24} sm={8}>
-            <Card>
+            <Card className="shadow-md" bodyStyle={{ padding: "24px" }}>
               <Statistic
-                title="Нийт Хичээл"
+                title={<span className="text-lg font-medium">Нийт Хичээл</span>}
                 value={courses.length}
-                prefix={<BookOutlined />}
+                prefix={<BookOutlined className="text-blue-500" />}
+                valueStyle={{ color: "#3B82F6", fontSize: "24px" }}
               />
             </Card>
           </Col>
           <Col xs={24} sm={8}>
-            <Card>
+            <Card className="shadow-md" bodyStyle={{ padding: "24px" }}>
               <Statistic
-                title="Нийт Даалгавар"
+                title={
+                  <span className="text-lg font-medium">Нийт Даалгавар</span>
+                }
                 value={assignments.length}
-                prefix={<FileOutlined />}
+                prefix={<FileOutlined className="text-green-500" />}
+                valueStyle={{ color: "#10B981", fontSize: "24px" }}
               />
             </Card>
           </Col>
           <Col xs={24} sm={8}>
-            <Card>
+            <Card className="shadow-md" bodyStyle={{ padding: "24px" }}>
               <Statistic
-                title="Ойрын хугацаанд дуусах"
+                title={
+                  <span className="text-lg font-medium">
+                    Ойрын хугацаанд дуусах
+                  </span>
+                }
                 value={upcomingAssignments.length}
-                prefix={<CalendarOutlined />}
+                prefix={<CalendarOutlined className="text-orange-500" />}
+                valueStyle={{ color: "#F97316", fontSize: "24px" }}
               />
             </Card>
           </Col>
         </Row>
 
-        {/* Calendar */}
-        <Card title="Даалгаврын хуваарь">
-          {assignments.length > 0 ? (
-            <AssignmentCalendar
-              mode="student"
-              assignments={assignments}
-              courses={courses}
-            />
-          ) : (
-            <Empty description="Одоогоор даалгавар байхгүй байна" />
-          )}
+        {/* Assignment Dropdowns */}
+        <Card className="shadow-md" bodyStyle={{ padding: "24px" }}>
+          <StudentAssignmentDropdowns
+            assignments={assignments}
+            loading={loading}
+            onAssignmentSubmitted={fetchData}
+          />
         </Card>
       </div>
     );

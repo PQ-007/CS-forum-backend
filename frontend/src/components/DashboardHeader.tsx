@@ -30,16 +30,17 @@ const DashboardHeader: React.FC = () => {
   };
 
   const handleProfile = () => {
-    navigate(`/dashboard/${userData?.type}/profile/${user?.uid}`);
+    navigate(`/dashboard/student/profile/${user?.uid}`);
   };
 
   const handleSettings = () => {
-    navigate(`/dashboard/${userData?.type}/settings/${user?.uid}`);
+    navigate(`/dashboard/student/settings/${user?.uid}`);
   };
 
   const handleSearch = () => {
     console.log("Search for:", query);
     // Add your search logic here
+    navigate(`/dashboard/${userData?.type || "student"}/settings/${user?.uid}`);
   };
 
   const menu = (

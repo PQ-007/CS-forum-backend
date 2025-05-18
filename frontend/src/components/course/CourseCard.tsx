@@ -66,7 +66,9 @@ const CourseCard = React.memo<CourseCardProps>(
 
     const handleEditClick = (e: React.MouseEvent) => {
       e.stopPropagation();
+      console.log("CourseCard: Triggering onEdit for course:", { id, title });
       actions?.onEdit?.({
+        id,
         title,
         year,
         modules,
@@ -80,7 +82,6 @@ const CourseCard = React.memo<CourseCardProps>(
       e.stopPropagation();
       if (!actions?.onDelete) return;
 
-      // Log deletion attempt
       console.log("Attempting to delete course:", { id, title });
 
       if (!id) {
@@ -96,7 +97,7 @@ const CourseCard = React.memo<CourseCardProps>(
         <Card
           className={`rounded-xl shadow-lg overflow-hidden relative ${className}`}
           onClick={onClick}
-          hoverable
+          hoverable={!!actions}
         >
           {/* Gradient Background */}
           <div
@@ -115,7 +116,7 @@ const CourseCard = React.memo<CourseCardProps>(
                 {title}
               </Title>
 
-              {actions?.canEdit && (
+              {actions && (
                 <div className="action-buttons flex gap-2">
                   <Tooltip title="Хичээлийн мэдээлэл засах">
                     <Button
@@ -127,8 +128,11 @@ const CourseCard = React.memo<CourseCardProps>(
                         />
                       }
                       onClick={handleEditClick}
-                      className="hover:!text-white transition-all duration-200 
-                        hover:bg-white/10 active:bg-white/20"
+                      className={
+                        actions
+                          ? "hover:!text-white transition-all duration-200 hover:bg-white/10 active:bg-white/20"
+                          : ""
+                      }
                     />
                   </Tooltip>
                   <Tooltip title="Хичээл устгах">
@@ -141,8 +145,11 @@ const CourseCard = React.memo<CourseCardProps>(
                         />
                       }
                       onClick={handleDeleteClick}
-                      className="hover:!text-red-400 transition-all duration-200 
-                        hover:bg-red-500/10 active:bg-red-500/20"
+                      className={
+                        actions
+                          ? "hover:!text-red-400 transition-all duration-200 hover:bg-red-500/10 active:bg-red-500/20"
+                          : ""
+                      }
                     />
                   </Tooltip>
                 </div>

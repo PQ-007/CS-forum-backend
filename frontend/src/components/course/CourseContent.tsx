@@ -5,11 +5,14 @@ import {
   FileOutlined,
   PlusOutlined,
   RightOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import { Button, Modal } from "antd";
+import { Button, Modal, message } from "antd";
 import React, { useState } from "react";
 import FormModal from "../Modal";
 import { ContentSection, CourseData, FileItem } from "../types";
+import { getFileUrl, FileServiceError } from "../../service/fileService";
+import FilePreview from "../common/FilePreview";
 
 interface CourseContentProps {
   sections: ContentSection[];
@@ -46,28 +49,74 @@ const CourseContent: React.FC<CourseContentProps> = ({
   onDeleteSection,
   isEditable = false,
 }) => {
-  console.log("CourseContent sections:", sections); // Debug log
-  console.log("CourseContent isEditable:", isEditable); // Debug log
+  console.log("CourseContent sections:", sections);
+  console.log("CourseContent isEditable:", isEditable);
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [editing, setEditing] = useState<EditingState | null>(null);
 
   const handleFileClick = (file: FileItem) => {
-    setPreviewFile(file);
+    try {
+      // Try to get the file URL first to catch any errors
+      getFileUrl(file.storagePath || file.url);
+      setPreviewFile(file);
+    } catch (error) {
+      const fileError = error as FileServiceError;
+      let errorMessage = "Файл нээхэд алдаа гарлаа";
+
+      switch (fileError.type) {
+        case "BLOCKED":
+          errorMessage =
+            "Сервертэй холбогдоход алдаа гарлаа. Сүлжээний тохиргоо, эсвэл халдлагаас хамгаалах системийг шалгана уу.";
+          break;
+        case "CORS":
+          errorMessage =
+            "Серверийн зөвшөөрөл хүрэлцэхгүй байна. Системийн администратортой холбоо барина уу.";
+          break;
+        case "NETWORK":
+          errorMessage = "Холболт удаан байна. Дараа дахин оролдоно уу.";
+          break;
+        case "SERVER":
+          errorMessage = "Серверийн алдаа гарлаа. Дараа дахин оролдоно уу.";
+          break;
+        case "VALIDATION":
+          errorMessage = "Файлын мэдээлэл буруу байна.";
+          break;
+      }
+
+      Modal.error({
+        title: "Алдаа гарлаа",
+        icon: <ExclamationCircleOutlined />,
+        content: errorMessage,
+        okText: "Ойлголоо",
+      });
+    }
   };
 
-  const handleModalSubmit = (values: { title?: string; name?: string }) => {
-    if (editing?.type === "section" && editing.sectionTitle) {
-      onEditSection?.(editing.sectionTitle, values.title || "");
-    } else if (
-      editing?.type === "file" &&
-      editing.sectionTitle !== undefined &&
-      editing.fileIndex !== undefined
-    ) {
-      onEditFile?.(editing.sectionTitle, editing.fileIndex, values.name || "");
+  const handleModalSubmit = async (values: {
+    title?: string;
+    name?: string;
+  }) => {
+    try {
+      if (editing?.type === "section" && editing.sectionTitle) {
+        await onEditSection?.(editing.sectionTitle, values.title || "");
+      } else if (
+        editing?.type === "file" &&
+        editing.sectionTitle !== undefined &&
+        editing.fileIndex !== undefined
+      ) {
+        await onEditFile?.(
+          editing.sectionTitle,
+          editing.fileIndex,
+          values.name || ""
+        );
+      }
+      setEditing(null);
+    } catch (error) {
+      console.error("Error in handleModalSubmit:", error);
+      message.error("Өөрчлөлт хадгалахад алдаа гарлаа");
     }
-    setEditing(null);
   };
 
   const getModalFields = () => {
@@ -89,49 +138,6 @@ const CourseContent: React.FC<CourseContentProps> = ({
         rules: [{ required: true, message: "Файлын нэр оруулна уу!" }],
       },
     ];
-  };
-
-  const renderFilePreview = (file: FileItem) => {
-    if (file.type?.startsWith("image/")) {
-      return (
-        <img
-          src={file.url}
-          alt={file.name}
-          style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain" }}
-        />
-      );
-    }
-
-    if (file.type === "application/pdf") {
-      return (
-        <div style={{ height: "80vh" }}>
-          <iframe
-            src={file.url}
-            title={file.name}
-            width="100%"
-            height="100%"
-            style={{ border: "none" }}
-          />
-        </div>
-      );
-    }
-
-    // For other file types, show a download link
-    return (
-      <div className="text-center p-4">
-        <FileOutlined style={{ fontSize: 48 }} />
-        <p className="mt-2">{file.name}</p>
-        <a
-          href={file.url}
-          download={file.name}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 hover:text-blue-700 mt-4 inline-block px-4 py-2 border border-blue-500 rounded hover:bg-blue-50 transition-colors"
-        >
-          Татах
-        </a>
-      </div>
-    );
   };
 
   const renderFileItem = (
@@ -262,7 +268,6 @@ const CourseContent: React.FC<CourseContentProps> = ({
                   </div>
                 ))}
 
-                {/* Add File button with animation */}
                 {onAddFile && (
                   <button
                     onClick={() => onAddFile(section.title)}
@@ -291,16 +296,15 @@ const CourseContent: React.FC<CourseContentProps> = ({
         </div>
       </div>
 
-      <Modal
-        open={!!previewFile}
-        onCancel={() => setPreviewFile(null)}
-        footer={null}
-        width={800}
-        title={previewFile?.name}
-        bodyStyle={{ padding: 0 }}
-      >
-        {previewFile && renderFilePreview(previewFile)}
-      </Modal>
+      {/* Replace the old modal with FilePreview component */}
+      {previewFile && (
+        <FilePreview
+          fileUrl={getFileUrl(previewFile.storagePath || previewFile.url)}
+          fileName={previewFile.name}
+          open={!!previewFile}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
 
       <FormModal
         title={editing?.type === "section" ? "Сэдэв засах" : "Файл засах"}

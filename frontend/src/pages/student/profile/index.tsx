@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { Profile, SocialLink } from "./type.ts";
 import { useParams } from "react-router-dom";
-import {
-  FaYoutube,
-  FaFacebook,
-  FaGithub,
-  FaInstagram,
-  FaSpinner,
-} from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaYoutube, FaGithub } from "react-icons/fa";
 import { Avatar } from "../../../components/profile/Avatar.tsx";
 import { ProfileInfo } from "../../../components/profile/ProfileInfo.tsx";
 import { BioSection } from "../../../components/profile/BioSection.tsx";
@@ -17,7 +11,7 @@ import { InterestsSection } from "../../../components/profile/InterestSection.ts
 import { ContentTabs } from "../../../components/profile/ContentTabs.tsx";
 import { Loading } from "../../../components/Loading.tsx";
 import profileService from "../../../service/profileService.tsx";
-import {useAuth} from "../../../context/AuthContext.tsx";
+import { useAuth } from "../../../context/AuthContext.tsx";
 const StudentProfilePage = () => {
   const { uid } = useParams();
   const { user } = useAuth();
@@ -35,10 +29,10 @@ const StudentProfilePage = () => {
       setError(null);
 
       try {
-       if (!uid) {
-         throw new Error("UID is undefined");
-       }
-       const result = await profileService.getProfile(uid);
+        if (!uid) {
+          throw new Error("UID is undefined");
+        }
+        const result = await profileService.getProfile(uid);
 
         setProfile(result);
       } catch (err) {
@@ -53,11 +47,12 @@ const StudentProfilePage = () => {
   }, [uid]);
 
   if (loading) {
-    return <Loading/>;
+    return <Loading />;
   }
-  
+
   if (error) {
     return (
+      
       <div className="min-h-screen flex items-center justify-center">
         <div className="bg-red-900/30 text-red-200 p-6 rounded-lg max-w-md">
           <h2 className="text-xl font-bold mb-2">Error</h2>
@@ -128,7 +123,11 @@ const StudentProfilePage = () => {
     { key: "pinned", label: "Pinned", items: profile.pinned || [] },
     { key: "posts", label: "Posts", items: profile.posts || [] },
     { key: "projects", label: "Projects", items: profile.projects || [] },
-    { key: "certifications", label: "Certifications", items: profile.certifications || [] },
+    {
+      key: "certifications",
+      label: "Certifications",
+      items: profile.certifications || [],
+    },
   ];
 
   const toggleFollow = () => {
@@ -142,7 +141,13 @@ const StudentProfilePage = () => {
         <div className="relative p-6 rounded-3xl shadow-3xl bg-gradient-to-r from-[#1a1a2e] to-[#16213e] text-white mb-6">
           <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
             <Avatar profile={profile} />
-            <ProfileInfo profile={profile} toggleFollow={toggleFollow} socialLinks={socialLinks} isFollowing={isFollowing} myProfile={(user?.uid == uid) ? true : false} />
+            <ProfileInfo
+              profile={profile}
+              toggleFollow={toggleFollow}
+              socialLinks={socialLinks}
+              isFollowing={isFollowing}
+              myProfile={user?.uid == uid ? true : false}
+            />
           </div>
         </div>
 
@@ -157,7 +162,11 @@ const StudentProfilePage = () => {
           <div className="md:col-span-2 space-y-6">
             <StatsSection statCards={statCards} />
             <InterestsSection profile={profile} />
-            <ContentTabs activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} />
+            <ContentTabs
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              tabs={tabs}
+            />
           </div>
         </div>
       </div>

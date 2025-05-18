@@ -83,6 +83,21 @@ export type ModalFormValues =
   | FileFormValues
   | SectionFormValues;
 
+export type AssignmentSubmission = {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  studentName?: string;
+  fileUrl: string;
+  fileName: string;
+  comment: string;
+  submittedAt: string;
+  status: "pending" | "graded";
+  grade?: number;
+  feedback?: string;
+  gradedAt?: string;
+};
+
 export type Assignment = {
   id: string;
   courseId: string;
@@ -90,6 +105,7 @@ export type Assignment = {
   title: string;
   deadline: string; // ISO string
   description: string;
+  submission?: AssignmentSubmission; // Optional submission details
 };
 
 export interface AssignmentCalendarProps {

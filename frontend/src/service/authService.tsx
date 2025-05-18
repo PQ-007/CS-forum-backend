@@ -3,7 +3,6 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signOut,
-  User,
 } from "firebase/auth";
 import { auth, provider, db } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";

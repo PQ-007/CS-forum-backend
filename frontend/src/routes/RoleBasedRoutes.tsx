@@ -5,9 +5,14 @@ import ProtectedRoute from "./ProtectedRoute";
 import StudentProfilePage from "../pages/student/profile";
 import StudentSettingsPage from "../pages/student/settings";
 import { Loading } from "../components/Loading";
-import StudentArticlePage from "../pages/student/article";
-import StudentArticleByIdPage from "../pages/student/article/articleByID";
+import StudentPostPage from "../pages/student/post";
 
+import { TabProvider } from "../context/TabContext";
+
+import AddArticle from "../components/post/article/AddArticle";
+import ReadArticle from "../components/post/article/ReadArticle";
+import AdminStatsPage from "../pages/admin/stats";
+import AdminUsersListPage from "../pages/admin/users-list";
 
 // Layouts
 const AuthLayout = lazy(() => import("../layouts/login_page"));
@@ -30,7 +35,7 @@ const StudentAssignmentPage = lazy(() => import("../pages/student/assignment"));
 // const TeacherHomePage = lazy(() => import("../pages/teacher/home"));
 const TeacherCoursePage = lazy(() => import("../pages/teacher/course"));
 const TeacherAssignmentPage = lazy(() => import("../pages/teacher/assignment"));
-
+const TeacherStudentsPage = lazy(() => import("../pages/teacher/students"));
 // Admin Pages - Uncomment when implementing
 // const AdminHomePage = lazy(() => import("../pages/admin/home"));
 // const AdminDashboardPage = lazy(() => import("../pages/admin/dashboard"));
@@ -39,7 +44,7 @@ const TeacherAssignmentPage = lazy(() => import("../pages/teacher/assignment"));
 const LoadingFallback = () => <Loading />;
 
 const RoleBasedRoutes: React.FC = () => {
-  const { userData, authorized, loading } = useAuth();
+  const { userData, loading } = useAuth();
 
   // Get the user role - default to student if no role found
   const userRole = userData?.type || "student";
@@ -122,25 +127,30 @@ const RoleBasedRoutes: React.FC = () => {
               />
             }
           />
-           <Route
-            path="article"
-            element={<DashboardContent mainContent={<StudentArticlePage/>} />}
+          <Route
+            path="post"
+            element={
+              <TabProvider>
+                <DashboardContent
+                  mainContent={<StudentPostPage />}
+             
+                />
+              </TabProvider>
+            }
           />
           <Route
-            path="question"
-            element={<DashboardContent mainContent={<p>question page</p>} />}
+            path="post/article/write/:id"
+            element={<DashboardContent mainContent={<AddArticle/>} />}
           />
           <Route
-            path={`article/:uid`}
-            element={<DashboardContent mainContent={<StudentArticleByIdPage/>} />}
+            path={`post/article/read/:id`}
+            element={
+              <DashboardContent mainContent={<ReadArticle/>} />
+            }
           />
-           <Route
+          <Route
             path="projects"
             element={<DashboardContent mainContent={<p>projects page</p>} />}
-          />
-          <Route
-            path={`projects/:uid`}
-            element={<DashboardContent mainContent={<div> selected projects page</div>} />}
           />
           <Route
             path={`profile/:uid`}
@@ -152,9 +162,7 @@ const RoleBasedRoutes: React.FC = () => {
           />
           <Route
             path={`announcements`}
-            element={<DashboardContent mainContent={<p>
-              Medeelel Go
-            </p>} />}
+            element={<DashboardContent mainContent={<p>Medeelel Go</p>} />}
           />
         </Route>
 
@@ -199,10 +207,18 @@ const RoleBasedRoutes: React.FC = () => {
               />
             }
           />
+          <Route
+            path="students"
+            element={
+              <DashboardContent
+                mainContent={<TeacherStudentsPage section="main" />}
+              />
+            }
+          />
         </Route>
 
         {/* Admin Routes - These are placeholder routes until you implement the components */}
-        <Route
+        <Route  
           path="/dashboard/admin"
           element={
             <ProtectedRoute roleRequired="admin">
@@ -224,11 +240,11 @@ const RoleBasedRoutes: React.FC = () => {
             }
           />
           <Route
-            path="dashboard"
+            path="stats"
             element={
               <DashboardContent
                 mainContent={
-                  <div>Admin Dashboard Page (Create this component)</div>
+                  <AdminStatsPage/>
                 }
                 sidebarContent={<div>Admin Dashboard Sidebar</div>}
               />
@@ -238,14 +254,11 @@ const RoleBasedRoutes: React.FC = () => {
             path="users-list"
             element={
               <DashboardContent
-                mainContent={
-                  <div>Userslist page (Create this component)</div>
-                }
+                mainContent={<AdminUsersListPage/>}
                 sidebarContent={<div>Admin Dashboard Sidebar</div>}
               />
             }
           />
-
         </Route>
 
         {/* Catch-all Route */}

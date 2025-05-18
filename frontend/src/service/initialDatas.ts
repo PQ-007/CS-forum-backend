@@ -1,5 +1,6 @@
 import { Profile } from "../pages/student/profile/type";
 
+
 export const initialProfileData: Profile = {
   name: "",
   year: 0,

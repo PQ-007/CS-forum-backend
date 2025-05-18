@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
+import {
+  getAllowedExtensions,
+  getAllowedFileTypesDescription,
+} from "../../utils/FileHandler";
+
 export const courseFields = [
   {
     name: "title",
@@ -16,15 +21,16 @@ export const courseFields = [
   {
     name: "year",
     label: "Оюутны курс",
-    type: "number" as const,
+    type: "select" as const,
+    options: [
+      { label: "1-р курс", value: 1 },
+      { label: "2-р курс", value: 2 },
+      { label: "3-р курс", value: 3 },
+      { label: "4-р курс", value: 4 },
+      { label: "5-р курс", value: 5 },
+    ],
     rules: [
       { required: true, message: "Хэддүгээр курсийн оюутнуудад заах вэ?" },
-      {
-        type: "number",
-        min: 1,
-        max: 5,
-        message: "1-ээс 5-н хооронд тоо оруулна уу!",
-      },
     ],
   },
 ];
@@ -43,19 +49,9 @@ export const fileFields = [
     rules: [{ required: true, message: "Файлаа оруулна уу!" }],
     validation: {
       maxSize: 10 * 1024 * 1024, // 10MB
-      allowedTypes: [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/vnd.ms-powerpoint",
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "image/png",
-        "image/jpeg",
-      ],
-      accept: ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg",
+      accept: getAllowedExtensions(),
     },
+    description: `Зөвшөөрөгдсөн файлын төрлүүд: ${getAllowedFileTypesDescription()}`,
   },
 ];
 
